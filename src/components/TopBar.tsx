@@ -1,4 +1,5 @@
 import { Bell, ChevronDown, User } from "lucide-react";
+import logoIcon from "@/assets/logo-icon.png";
 
 const TopBar = () => {
   return (
