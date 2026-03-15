@@ -1,11 +1,13 @@
 import { Bell, ChevronDown, User } from "lucide-react";
+import logoIcon from "@/assets/logo-icon.png";
 
 const TopBar = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-surface-dark flex items-center justify-between px-6">
       <div className="flex items-center w-[220px]">
-        <span className="text-xl font-bold tracking-tight text-surface-dark-foreground">
-          majools
+        <img src={logoIcon} alt="Majools" className="h-8 w-auto" />
+        <span className="text-[22px] font-bold tracking-[0.08em] uppercase leading-none text-surface-dark-foreground">
+          MAJOOLS
         </span>
       </div>
 
