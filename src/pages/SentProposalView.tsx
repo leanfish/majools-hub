@@ -15,6 +15,8 @@ export default function SentProposalView() {
   const navigate = useNavigate();
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!id) return;
