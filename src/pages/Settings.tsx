@@ -5,7 +5,9 @@ import BreadcrumbBar from '@/components/BreadcrumbBar';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import { templates, getDefaultTemplate, setDefaultTemplate, type TemplateId } from '@/lib/templates';
-import { getSettings, saveSettings } from '@/lib/settings-store';
+import { getSettings, saveSettings, TOGGLEABLE_SECTIONS } from '@/lib/settings-store';
+import type { SectionType } from '@/lib/mock-data';
+import { Switch } from '@/components/ui/switch';
 
 const thumbnailStyles: Record<TemplateId, { bg: string; accent: string }> = {
   classic: { bg: 'bg-white', accent: 'bg-gray-200' },
@@ -20,10 +22,17 @@ export default function Settings() {
   const [email, setEmail] = useState(user?.email || '');
   const [company, setCompany] = useState(settings.companyName || '');
   const [defaultTpl, setDefaultTpl] = useState<TemplateId>(getDefaultTemplate());
+  const [enabledSections, setEnabledSections] = useState<SectionType[]>(settings.defaultSections);
+
+  const toggleSection = (type: SectionType) => {
+    setEnabledSections(prev =>
+      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    );
+  };
 
   const handleSave = () => {
     setDefaultTemplate(defaultTpl);
-    saveSettings({ companyName: company });
+    saveSettings({ companyName: company, defaultSections: enabledSections });
     toast.success('Settings saved');
   };
 
@@ -85,6 +94,27 @@ export default function Settings() {
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Default Sections */}
+          <div className="space-y-3 pt-4 border-t border-border">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Default Sections</label>
+            <p className="text-xs text-muted-foreground">Choose which sections are included by default in new proposals.</p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/50">
+                <span className="text-sm text-foreground font-medium">Cover</span>
+                <Switch checked disabled className="opacity-50" />
+              </div>
+              {TOGGLEABLE_SECTIONS.map(s => (
+                <div key={s.type} className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted/30 transition-colors">
+                  <span className="text-sm text-foreground">{s.label}</span>
+                  <Switch
+                    checked={enabledSections.includes(s.type)}
+                    onCheckedChange={() => toggleSection(s.type)}
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
