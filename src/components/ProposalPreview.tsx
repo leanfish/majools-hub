@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { format } from 'date-fns';
 import type { ProposalSection } from '@/lib/mock-data';
 import type { TemplateId } from '@/lib/templates';
@@ -13,7 +14,7 @@ interface Props {
   acceptedAt?: string;
 }
 
-export default function ProposalPreview({ sections, template, companyName, version, sentAt, proposalTitle, clientName, acceptedAt }: Props) {
+const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPreview({ sections, template, companyName, version, sentAt, proposalTitle, clientName, acceptedAt }, ref) {
   const cover = sections.find(s => s.type === 'cover')?.coverData;
   const dateDisplay = cover?.date
     ? format(new Date(cover.date), 'MMMM d, yyyy')
@@ -39,7 +40,7 @@ export default function ProposalPreview({ sections, template, companyName, versi
 
   // Render each section as a distinct page card with footer
   const renderSectionCard = (section: ProposalSection, content: React.ReactNode, pageIdx: number, hideFooter = false) => (
-    <div key={section.id} className="bg-white rounded-lg shadow-md min-h-[500px] overflow-hidden flex flex-col">
+    <div key={section.id} data-pdf-page className="bg-white rounded-lg shadow-md min-h-[500px] overflow-hidden flex flex-col">
       <div className="flex-1">
         {content}
       </div>
@@ -75,7 +76,7 @@ export default function ProposalPreview({ sections, template, companyName, versi
   if (template === 'modern') {
     pageIndex = 0;
     return (
-      <div className="space-y-10 p-2">
+      <div ref={ref} className="space-y-10 p-2">
         {cover && renderSectionCard(sections.find(s => s.type === 'cover')!, (
           <div className="bg-[#3DCEE9] px-10 py-12 min-h-[500px] flex flex-col justify-center">
             <h1 className="text-3xl font-bold text-white tracking-tight">{cover.projectTitle || 'Untitled Proposal'}</h1>
@@ -110,7 +111,7 @@ export default function ProposalPreview({ sections, template, companyName, versi
   if (template === 'branded') {
     pageIndex = 0;
     return (
-      <div className="space-y-10 p-2">
+      <div ref={ref} className="space-y-10 p-2">
         {cover && renderSectionCard(sections.find(s => s.type === 'cover')!, (
           <div className="bg-gray-900 px-10 py-10 min-h-[500px] flex flex-col justify-center relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#3DCEE9]/20 rounded-full -translate-y-1/2 translate-x-1/3" />
@@ -154,7 +155,7 @@ export default function ProposalPreview({ sections, template, companyName, versi
   // Classic (default)
   pageIndex = 0;
   return (
-    <div className="space-y-10 p-2">
+    <div ref={ref} className="space-y-10 p-2">
       {cover && renderSectionCard(sections.find(s => s.type === 'cover')!, (
         <div className="px-10 py-10 min-h-[500px] flex flex-col justify-center">
           <h1 className="text-3xl font-semibold tracking-tight text-gray-900">{cover.projectTitle || 'Untitled Proposal'}</h1>
@@ -182,4 +183,6 @@ export default function ProposalPreview({ sections, template, companyName, versi
       })}
     </div>
   );
-}
+});
+
+export default ProposalPreview;

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Save, Send, CalendarIcon, Eye, HelpCircle, Clock } from 'lucide-react';
+import { Plus, Trash2, Save, Send, CalendarIcon, Eye, HelpCircle, Clock, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import ProposalSendFlow from '@/components/ProposalSendFlow';
+import ProposalPreview from '@/components/ProposalPreview';
 import SectionsPanel from '@/components/SectionsPanel';
 import SectionHelpTips from '@/components/SectionHelpTips';
 import VersionHistoryDrawer from '@/components/VersionHistoryDrawer';
@@ -40,6 +41,8 @@ export default function ProposalBuilder() {
   const [showHelp, setShowHelp] = useState(false);
   const [proposalVersion, setProposalVersion] = useState(1);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   // Auto-populate company name from Settings, fallback to user name
   useEffect(() => {
@@ -172,6 +175,52 @@ export default function ProposalBuilder() {
     setShowSendFlow(true);
   };
 
+  const handleDownloadPdf = useCallback(async () => {
+    setPdfExporting(true);
+    toast.info('Generating PDF...');
+    try {
+      // Wait a tick for the hidden preview to render
+      await new Promise(r => setTimeout(r, 100));
+      const container = pdfRef.current;
+      if (!container) throw new Error('No preview container');
+
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ]);
+
+      const pageCards = container.querySelectorAll<HTMLElement>('[data-pdf-page]');
+      if (pageCards.length === 0) throw new Error('No pages');
+
+      const PDF_WIDTH = 595.28;
+      const PDF_HEIGHT = 841.89;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+      for (let i = 0; i < pageCards.length; i++) {
+        const canvas = await html2canvas(pageCards[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgHeight = (canvas.height / canvas.width) * PDF_WIDTH;
+        if (i > 0) pdf.addPage();
+        if (imgHeight <= PDF_HEIGHT) {
+          pdf.addImage(imgData, 'JPEG', 0, 0, PDF_WIDTH, imgHeight);
+        } else {
+          pdf.addImage(imgData, 'JPEG', 0, 0, (canvas.width / canvas.height) * PDF_HEIGHT, PDF_HEIGHT);
+        }
+      }
+
+      const cover = sections.find(s => s.type === 'cover')?.coverData;
+      const clientName = cover?.clientName || 'Client';
+      const projectTitle = cover?.projectTitle || title || 'Proposal';
+      pdf.save(`${clientName} — ${projectTitle} — v${proposalVersion}.pdf`);
+      toast.success('PDF downloaded');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to generate PDF');
+    } finally {
+      setPdfExporting(false);
+    }
+  }, [sections, title, proposalVersion]);
+
   const current = sections[activeSection];
   const currentTemplate = templates.find(t => t.id === template);
   const companyName = sections.find(s => s.type === 'cover')?.coverData?.companyName || '';
@@ -242,6 +291,9 @@ export default function ProposalBuilder() {
           </span>
         </div>
         <div className="flex gap-2">
+          <button onClick={handleDownloadPdf} disabled={pdfExporting} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-50">
+            <Download size={16} /> {pdfExporting ? 'Exporting...' : 'Download PDF'}
+          </button>
           <button onClick={handlePreview} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors">
             <Eye size={16} /> Preview
           </button>
@@ -250,6 +302,21 @@ export default function ProposalBuilder() {
           </button>
         </div>
       </div>
+
+      {/* Hidden preview for PDF export */}
+      {pdfExporting && (
+        <div className="fixed left-[-9999px] top-0" style={{ width: 800 }}>
+          <ProposalPreview
+            ref={pdfRef}
+            sections={sections}
+            template={template}
+            companyName={companyName}
+            version={proposalVersion}
+            proposalTitle={title}
+            clientName={sections.find(s => s.type === 'cover')?.coverData?.clientName}
+          />
+        </div>
+      )}
 
       {showSendFlow && (
         <ProposalSendFlow

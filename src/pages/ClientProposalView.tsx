@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Download } from 'lucide-react';
 import { getPublicProposal, respondToProposal } from '@/lib/api';
 import type { Proposal } from '@/lib/mock-data';
 import logoIcon from '@/assets/logo-icon.png';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function ClientProposalView() {
   const { token } = useParams<{ token: string }>();
@@ -16,6 +18,8 @@ export default function ClientProposalView() {
   const [responded, setResponded] = useState<'accepted' | 'declined' | null>(null);
   const [declineMessage, setDeclineMessage] = useState('');
   const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -113,12 +117,12 @@ export default function ClientProposalView() {
         </div>
       </header>
 
-      <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto p-8 space-y-10">
+      <motion.main ref={mainRef} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto p-8 space-y-10">
         {/* Each section as a distinct page card */}
         {proposal.sections.map((s, pageIdx) => {
           if (s.type === 'cover' && cover) {
             return (
-              <div key={s.id} className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
+              <div key={s.id} data-pdf-page className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
                 <div className="flex-1 p-8 flex flex-col justify-center space-y-2">
                   <h1 className="text-2xl font-semibold text-foreground">{cover.projectTitle || proposal.title}</h1>
                   <p className="text-muted-foreground">Prepared for <span className="text-foreground font-medium">{cover.clientName || proposal.client}</span></p>
@@ -133,7 +137,7 @@ export default function ClientProposalView() {
             const total = items.reduce((sum, li) => sum + li.total, 0);
             if (items.length === 0) return null;
             return (
-              <div key={s.id} className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
+              <div key={s.id} data-pdf-page className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
                 <div className="flex-1 p-8">
                   <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
                   <div className="space-y-2">
@@ -162,7 +166,7 @@ export default function ClientProposalView() {
 
           if (!s.content) return null;
           return (
-            <div key={s.id} className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
+            <div key={s.id} data-pdf-page className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
               <div className="flex-1 p-8">
                 <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
                 <div className="text-sm text-foreground whitespace-pre-wrap">{s.content}</div>
@@ -201,6 +205,47 @@ export default function ClientProposalView() {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Download PDF link */}
+        <div className="text-center pt-2 pb-8">
+          <button
+            onClick={async () => {
+              setPdfExporting(true);
+              toast.info('Generating PDF...');
+              try {
+                const container = mainRef.current;
+                if (!container) throw new Error('No content');
+                const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
+                // Select all page cards (bg-card rounded-lg shadow-widget)
+                const pageCards = container.querySelectorAll<HTMLElement>('[data-pdf-page]');
+                if (pageCards.length === 0) throw new Error('No pages');
+                const PDF_W = 595.28, PDF_H = 841.89;
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+                for (let i = 0; i < pageCards.length; i++) {
+                  const canvas = await html2canvas(pageCards[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+                  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                  const imgH = (canvas.height / canvas.width) * PDF_W;
+                  if (i > 0) pdf.addPage();
+                  if (imgH <= PDF_H) pdf.addImage(imgData, 'JPEG', 0, 0, PDF_W, imgH);
+                  else pdf.addImage(imgData, 'JPEG', 0, 0, (canvas.width / canvas.height) * PDF_H, PDF_H);
+                }
+                const clientName = cover?.clientName || proposal.client || 'Client';
+                const projectTitle = cover?.projectTitle || proposal.title || 'Proposal';
+                pdf.save(`${clientName} — ${projectTitle} — v${version}.pdf`);
+                toast.success('PDF downloaded');
+              } catch (err) {
+                console.error(err);
+                toast.error('Failed to generate PDF');
+              } finally {
+                setPdfExporting(false);
+              }
+            }}
+            disabled={pdfExporting}
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            <Download size={12} /> {pdfExporting ? 'Generating...' : 'Download as PDF'}
+          </button>
         </div>
       </motion.main>
     </div>
