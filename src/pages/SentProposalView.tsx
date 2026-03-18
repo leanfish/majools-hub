@@ -116,6 +116,7 @@ export default function SentProposalView() {
       <div className="flex-1 overflow-auto bg-muted/30">
         <div className="max-w-3xl mx-auto my-8">
           <ProposalPreview
+            ref={pdfRef}
             sections={proposal.sections}
             template={template}
             companyName={companyName}
