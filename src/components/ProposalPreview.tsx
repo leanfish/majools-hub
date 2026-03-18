@@ -10,6 +10,7 @@ interface Props {
   sentAt?: string;
   proposalTitle?: string;
   clientName?: string;
+  acceptedAt?: string;
 }
 
 export default function ProposalPreview({ sections, template, companyName, version, sentAt, proposalTitle, clientName }: Props) {
