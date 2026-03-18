@@ -32,7 +32,6 @@ export default function ProposalBuilder() {
   const [previewOnly, setPreviewOnly] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [proposalId, setProposalId] = useState(id || '');
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [template, setTemplate] = useState<TemplateId>(getDefaultTemplate());
 
   useEffect(() => {
