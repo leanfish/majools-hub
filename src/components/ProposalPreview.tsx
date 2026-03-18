@@ -76,7 +76,7 @@ export default function ProposalPreview({ sections, template, companyName, versi
             <p className="text-white/80 mt-2 text-base">Prepared for <span className="font-semibold text-white">{cover.clientName}</span></p>
             <p className="text-white/60 text-sm mt-1">By {displayCompany} · {dateDisplay}</p>
           </div>
-        ), pageIndex++)}
+        ), pageIndex++, true)}
 
         {sections.filter(s => s.type !== 'cover').map(s => {
           const idx = pageIndex++;
