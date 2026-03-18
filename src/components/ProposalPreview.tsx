@@ -10,9 +10,10 @@ interface Props {
   sentAt?: string;
   proposalTitle?: string;
   clientName?: string;
+  acceptedAt?: string;
 }
 
-export default function ProposalPreview({ sections, template, companyName, version, sentAt, proposalTitle, clientName }: Props) {
+export default function ProposalPreview({ sections, template, companyName, version, sentAt, proposalTitle, clientName, acceptedAt }: Props) {
   const cover = sections.find(s => s.type === 'cover')?.coverData;
   const dateDisplay = cover?.date
     ? format(new Date(cover.date), 'MMMM d, yyyy')
@@ -22,7 +23,12 @@ export default function ProposalPreview({ sections, template, companyName, versi
   const displayTitle = proposalTitle || cover?.projectTitle || 'Untitled Proposal';
   const displayClient = clientName || cover?.clientName || '';
 
-  const footerLeft = `${displayTitle}${displayClient ? ` — ${displayClient}` : ''} · v${version || 1} · ${sentAt ? `Sent ${format(new Date(sentAt), 'MMM d, yyyy')}` : 'Draft'}`;
+  const statusText = acceptedAt
+    ? `Accepted ${format(new Date(acceptedAt), 'MMM d, yyyy')}`
+    : sentAt
+      ? `Sent ${format(new Date(sentAt), 'MMM d, yyyy')}`
+      : 'Draft';
+  const footerLeft = `${displayTitle}${displayClient ? ` — ${displayClient}` : ''} · v${version || 1} · ${statusText}`;
 
   const renderFooter = (pageIdx: number) => (
     <div className="border-t border-gray-200 px-10 py-2 flex items-center justify-between text-[10px] text-gray-400">

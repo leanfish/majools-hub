@@ -53,6 +53,7 @@ export default function SentProposalView() {
 
   if (!proposal) return null;
 
+  const isAccepted = proposal.status === 'accepted';
   const sentDate = proposal.sentAt
     ? format(new Date(proposal.sentAt), 'MMMM d, yyyy')
     : 'unknown date';
@@ -60,17 +61,19 @@ export default function SentProposalView() {
   const cover = proposal.sections.find(s => s.type === 'cover')?.coverData;
   const companyName = cover?.companyName || '';
 
+  const bannerText = isAccepted
+    ? `This proposal was accepted on ${sentDate} and is permanently locked.`
+    : `This proposal was sent on ${sentDate} and is locked for editing.`;
+
   return (
     <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="flex flex-col min-h-[calc(100vh-48px)]">
       <BreadcrumbBar items={['Dashboard', 'Proposals', proposal.title]} />
 
       {/* Locked banner */}
-      <div className="bg-primary/5 border-b border-primary/20 px-8 py-3">
+      <div className={`border-b px-8 py-3 ${isAccepted ? 'bg-green-50 border-green-200' : 'bg-primary/5 border-primary/20'}`}>
         <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <Lock size={14} className="text-primary flex-shrink-0" />
-          <p className="text-sm text-foreground">
-            This proposal was sent on <span className="font-medium">{sentDate}</span> and is locked for editing.
-          </p>
+          <Lock size={14} className={isAccepted ? 'text-green-600 flex-shrink-0' : 'text-primary flex-shrink-0'} />
+          <p className="text-sm text-foreground">{bannerText}</p>
         </div>
       </div>
 
@@ -85,11 +88,12 @@ export default function SentProposalView() {
             sentAt={proposal.sentAt}
             proposalTitle={proposal.title}
             clientName={proposal.client}
+            acceptedAt={isAccepted ? proposal.sentAt : undefined}
           />
         </div>
       </div>
 
-      {/* Bottom action bar */}
+      {/* Bottom action bar — no actions for accepted proposals */}
       <div className="sticky bottom-0 z-10 border-t border-border bg-card px-8 py-3 flex items-center justify-between">
         <button
           onClick={() => navigate('/proposals')}
@@ -97,12 +101,14 @@ export default function SentProposalView() {
         >
           <ArrowLeft size={16} /> Back to Proposals
         </button>
-        <button
-          onClick={handleCreateNewVersion}
-          className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <RefreshCw size={16} /> Create New Version
-        </button>
+        {!isAccepted && (
+          <button
+            onClick={handleCreateNewVersion}
+            className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <RefreshCw size={16} /> Create New Version
+          </button>
+        )}
       </div>
     </motion.div>
   );

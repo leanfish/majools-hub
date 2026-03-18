@@ -168,8 +168,11 @@ export const mockActivity: ActivityItem[] = [
   { id: 'a4', text: 'Proposal accepted by Pinnacle Media', time: '2 days ago' },
 ];
 
-export function createDefaultSections(): ProposalSection[] {
-  return defaultSections.map((s, i) => ({
+export function createDefaultSections(enabledTypes?: SectionType[]): ProposalSection[] {
+  const filtered = enabledTypes
+    ? defaultSections.filter(s => s.type === 'cover' || enabledTypes.includes(s.type))
+    : defaultSections;
+  return filtered.map((s, i) => ({
     ...s,
     id: `sec-${Date.now()}-${i}`,
     lineItems: s.lineItems ? s.lineItems.map(li => ({ ...li, id: `li-${Date.now()}-${i}` })) : undefined,

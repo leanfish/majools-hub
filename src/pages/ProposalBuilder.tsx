@@ -26,7 +26,10 @@ export default function ProposalBuilder() {
   const { user } = useAuth();
   const isEdit = !!id;
 
-  const [sections, setSections] = useState<ProposalSection[]>(createDefaultSections());
+  const [sections, setSections] = useState<ProposalSection[]>(() => {
+    const settings = getSettings();
+    return createDefaultSections(settings.defaultSections);
+  });
   const [activeSection, setActiveSection] = useState(0);
   const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
