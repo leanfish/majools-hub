@@ -116,7 +116,7 @@ export default function ProposalPreview({ sections, template, companyName, versi
               <span>{dateDisplay}</span>
             </div>
           </div>
-        ), pageIndex++)}
+        ), pageIndex++, true)}
 
         {sections.filter(s => s.type !== 'cover').map(s => {
           const idx = pageIndex++;
