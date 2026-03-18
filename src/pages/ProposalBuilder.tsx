@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GripVertical, Plus, Trash2, Save, Send, CalendarIcon } from 'lucide-react';
+import { GripVertical, Plus, Trash2, Save, Send, CalendarIcon, Eye, Palette } from 'lucide-react';
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
-import ProposalSendModal from '@/components/ProposalSendModal';
+import ProposalSendFlow from '@/components/ProposalSendFlow';
+import TemplateSelectorModal from '@/components/TemplateSelectorModal';
 import { getProposal, createProposal, updateProposal } from '@/lib/api';
 import type { ProposalSection, ProposalLineItem } from '@/lib/mock-data';
 import { createDefaultSections } from '@/lib/mock-data';
@@ -14,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getDefaultTemplate, templates, type TemplateId } from '@/lib/templates';
 
 const getSectionNavLabel = (section: ProposalSection) => {
   if (section.type === 'executive-summary') return 'Summary';
@@ -31,11 +33,13 @@ export default function ProposalBuilder() {
   const [activeSection, setActiveSection] = useState(0);
   const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
-  const [showSendModal, setShowSendModal] = useState(false);
+  const [showSendFlow, setShowSendFlow] = useState(false);
+  const [previewOnly, setPreviewOnly] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [proposalId, setProposalId] = useState(id || '');
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [template, setTemplate] = useState<TemplateId>(getDefaultTemplate());
 
-  // Auto-populate user name on new proposals
   useEffect(() => {
     if (!isEdit && user) {
       setSections(prev => prev.map(s => {
@@ -53,6 +57,7 @@ export default function ProposalBuilder() {
         setTitle(p.title);
         setSections(p.sections);
         setProposalId(p.id);
+        if ((p as any).template) setTemplate((p as any).template);
       }).catch(() => {
         toast.error('Proposal not found');
         navigate('/proposals');
@@ -104,12 +109,13 @@ export default function ProposalBuilder() {
         clientEmail: cover?.clientEmail || '',
         value: totalValue,
         sections,
+        template,
       };
 
       if (proposalId) {
-        await updateProposal(proposalId, data);
+        await updateProposal(proposalId, data as any);
       } else {
-        const created = await createProposal(data);
+        const created = await createProposal(data as any);
         setProposalId(created.id);
       }
       toast.success('Proposal saved');
@@ -133,7 +139,19 @@ export default function ProposalBuilder() {
   };
   const handleDragEnd = () => setDragIdx(null);
 
+  const handlePreview = () => {
+    setPreviewOnly(true);
+    setShowSendFlow(true);
+  };
+
+  const handleSendClick = async () => {
+    await handleSave();
+    setPreviewOnly(false);
+    setShowSendFlow(true);
+  };
+
   const current = sections[activeSection];
+  const currentTemplate = templates.find(t => t.id === template);
 
   return (
     <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
@@ -142,13 +160,31 @@ export default function ProposalBuilder() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold text-foreground">{isEdit ? 'Edit Proposal' : 'New Proposal'}</h1>
           <div className="flex gap-2">
+            <button onClick={handlePreview} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors">
+              <Eye size={16} /> Preview
+            </button>
             <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-50">
               <Save size={16} /> {saving ? 'Saving...' : 'Save Draft'}
             </button>
-            <button onClick={() => { handleSave().then(() => setShowSendModal(true)); }} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+            <button onClick={handleSendClick} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
               <Send size={16} /> Send Proposal
             </button>
           </div>
+        </div>
+
+        {/* Template selector bar */}
+        <div className="bg-card rounded-lg shadow-widget px-4 py-3 mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Palette size={16} className="text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Template:</span>
+            <span className="text-sm font-medium text-foreground">{currentTemplate?.name}</span>
+          </div>
+          <button
+            onClick={() => setShowTemplateModal(true)}
+            className="text-sm text-primary font-medium hover:underline"
+          >
+            Change Template
+          </button>
         </div>
 
         <div className="grid grid-cols-[280px_1fr] gap-6">
@@ -186,11 +222,22 @@ export default function ProposalBuilder() {
         </div>
       </div>
 
-      {showSendModal && (
-        <ProposalSendModal
+      {showSendFlow && (
+        <ProposalSendFlow
           proposalId={proposalId}
-          onClose={() => setShowSendModal(false)}
-          onSent={() => { setShowSendModal(false); navigate('/proposals'); }}
+          sections={sections}
+          template={template}
+          onClose={() => setShowSendFlow(false)}
+          onSent={() => { setShowSendFlow(false); navigate('/proposals'); }}
+          previewOnly={previewOnly}
+        />
+      )}
+
+      {showTemplateModal && (
+        <TemplateSelectorModal
+          current={template}
+          onSelect={setTemplate}
+          onClose={() => setShowTemplateModal(false)}
         />
       )}
     </motion.div>
