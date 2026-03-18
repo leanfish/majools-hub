@@ -32,6 +32,7 @@ export interface Settings {
   profileEmail: string;
   // Company
   companyName: string;
+  companyLogo: string; // data URL or empty
   companyAddress: string;
   companyPhone: string;
   companyWebsite: string;
@@ -49,6 +50,7 @@ const DEFAULTS: Settings = {
   profileName: '',
   profileEmail: '',
   companyName: '',
+  companyLogo: '',
   companyAddress: '',
   companyPhone: '',
   companyWebsite: '',
