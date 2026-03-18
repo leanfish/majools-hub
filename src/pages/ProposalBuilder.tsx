@@ -121,18 +121,30 @@ export default function ProposalBuilder() {
     }
   };
 
-  const handleDragStart = (idx: number) => setDragIdx(idx);
-  const handleDragOver = (e: React.DragEvent, idx: number) => {
-    e.preventDefault();
-    if (dragIdx === null || dragIdx === idx) return;
-    const newSections = [...sections];
-    const [moved] = newSections.splice(dragIdx, 1);
-    newSections.splice(idx, 0, moved);
+  const handleReorder = (newSections: ProposalSection[], newActiveIndex: number) => {
     setSections(newSections);
-    setDragIdx(idx);
-    if (activeSection === dragIdx) setActiveSection(idx);
+    setActiveSection(newActiveIndex);
   };
-  const handleDragEnd = () => setDragIdx(null);
+
+  const handleDeleteSection = (index: number) => {
+    setSections(prev => prev.filter((_, i) => i !== index));
+    if (activeSection >= index && activeSection > 0) {
+      setActiveSection(activeSection - 1);
+    }
+  };
+
+  const handleAddSection = (type: SectionType, title: string) => {
+    const newSection: ProposalSection = {
+      id: `sec-${Date.now()}`,
+      type,
+      title,
+      content: '',
+      lineItems: type === 'investment' ? [{ id: `li-${Date.now()}`, description: '', quantity: 1, unitPrice: 0, total: 0 }] : undefined,
+      coverData: type === 'cover' ? { projectTitle: '', clientName: '', clientEmail: '', yourName: '', date: '' } : undefined,
+    };
+    setSections(prev => [...prev, newSection]);
+    setActiveSection(sections.length);
+  };
 
   const handlePreview = () => {
     setPreviewOnly(true);
