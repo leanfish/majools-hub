@@ -40,7 +40,7 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
 
   // Render each section as a distinct page card with footer
   const renderSectionCard = (section: ProposalSection, content: React.ReactNode, pageIdx: number, hideFooter = false) => (
-    <div key={section.id} className="bg-white rounded-lg shadow-md min-h-[500px] overflow-hidden flex flex-col">
+    <div key={section.id} data-pdf-page className="bg-white rounded-lg shadow-md min-h-[500px] overflow-hidden flex flex-col">
       <div className="flex-1">
         {content}
       </div>
