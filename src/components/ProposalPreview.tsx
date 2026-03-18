@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { format } from 'date-fns';
 import type { ProposalSection } from '@/lib/mock-data';
 import type { TemplateId } from '@/lib/templates';
