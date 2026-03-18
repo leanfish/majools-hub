@@ -15,6 +15,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
+const getSectionNavLabel = (section: ProposalSection) => {
+  if (section.type === 'executive-summary') return 'Summary';
+  if (section.type === 'terms') return 'Terms';
+  return section.title;
+};
+
 export default function ProposalBuilder() {
   const { id } = useParams();
   const navigate = useNavigate();
