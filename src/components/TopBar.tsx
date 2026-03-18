@@ -9,7 +9,7 @@ const TopBar = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-surface-dark flex items-center justify-between px-6">
-      <div className="flex items-center gap-3 w-[220px]">
+      <div className="flex items-center gap-3 w-[240px]">
         <img src={logoIcon} alt="Majools" className="h-8 w-auto" />
         <span className="text-[22px] font-bold tracking-[0.08em] uppercase leading-none text-surface-dark-foreground">
           MAJOOLS

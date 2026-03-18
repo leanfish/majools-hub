@@ -1,26 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GripVertical, Plus, Trash2, Save, Send } from 'lucide-react';
+import { GripVertical, Plus, Trash2, Save, Send, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
-import { getProposal, createProposal, updateProposal, sendProposal } from '@/lib/api';
-import type { Proposal, ProposalSection, ProposalLineItem } from '@/lib/mock-data';
+import ProposalSendModal from '@/components/ProposalSendModal';
+import { getProposal, createProposal, updateProposal } from '@/lib/api';
+import type { ProposalSection, ProposalLineItem } from '@/lib/mock-data';
 import { createDefaultSections } from '@/lib/mock-data';
+import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
-
-const SECTION_LABELS: Record<string, string> = {
-  cover: 'Cover',
-  'executive-summary': 'Executive Summary',
-  scope: 'Scope of Work',
-  deliverables: 'Deliverables',
-  timeline: 'Timeline',
-  investment: 'Investment',
-  terms: 'Terms & Conditions',
-};
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default function ProposalBuilder() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isEdit = !!id;
 
   const [sections, setSections] = useState<ProposalSection[]>(createDefaultSections());
@@ -30,6 +28,18 @@ export default function ProposalBuilder() {
   const [showSendModal, setShowSendModal] = useState(false);
   const [proposalId, setProposalId] = useState(id || '');
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+
+  // Auto-populate user name on new proposals
+  useEffect(() => {
+    if (!isEdit && user) {
+      setSections(prev => prev.map(s => {
+        if (s.type === 'cover' && s.coverData && !s.coverData.yourName) {
+          return { ...s, coverData: { ...s.coverData, yourName: user.name } };
+        }
+        return s;
+      }));
+    }
+  }, [isEdit, user]);
 
   useEffect(() => {
     if (isEdit && id) {
@@ -119,76 +129,6 @@ export default function ProposalBuilder() {
 
   const current = sections[activeSection];
 
-  const renderSectionEditor = () => {
-    if (!current) return null;
-
-    if (current.type === 'cover') {
-      const cd = current.coverData || { projectTitle: '', clientName: '', clientEmail: '', yourName: '', date: '' };
-      const updateCover = (field: string, value: string) => {
-        updateSection(activeSection, { coverData: { ...cd, [field]: value } });
-        if (field === 'projectTitle') setTitle(value);
-      };
-      return (
-        <div className="space-y-4">
-          {[
-            { label: 'Project Title', field: 'projectTitle', placeholder: 'e.g. Website Redesign' },
-            { label: 'Client Name', field: 'clientName', placeholder: 'e.g. Acme Corp' },
-            { label: 'Client Email', field: 'clientEmail', placeholder: 'client@example.com' },
-            { label: 'Your Name', field: 'yourName', placeholder: 'Your full name' },
-            { label: 'Date', field: 'date', placeholder: 'YYYY-MM-DD' },
-          ].map(f => (
-            <div key={f.field} className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{f.label}</label>
-              <input
-                value={(cd as Record<string, string>)[f.field] || ''}
-                onChange={e => updateCover(f.field, e.target.value)}
-                placeholder={f.placeholder}
-                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (current.type === 'investment') {
-      const items = current.lineItems || [];
-      const total = items.reduce((sum, li) => sum + li.total, 0);
-      return (
-        <div className="space-y-4">
-          <div className="grid grid-cols-[1fr_80px_100px_100px_40px] gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-            <span>Description</span><span>Qty</span><span>Unit Price</span><span>Total</span><span />
-          </div>
-          {items.map((li, i) => (
-            <div key={li.id} className="grid grid-cols-[1fr_80px_100px_100px_40px] gap-2 items-center">
-              <input value={li.description} onChange={e => updateLineItem(i, { description: e.target.value })} placeholder="Line item" className="h-9 px-2 rounded-md border border-input bg-background text-sm" />
-              <input type="number" value={li.quantity} onChange={e => updateLineItem(i, { quantity: Number(e.target.value) })} className="h-9 px-2 rounded-md border border-input bg-background text-sm" min={1} />
-              <input type="number" value={li.unitPrice} onChange={e => updateLineItem(i, { unitPrice: Number(e.target.value) })} className="h-9 px-2 rounded-md border border-input bg-background text-sm" min={0} step={0.01} />
-              <span className="text-sm font-medium text-foreground">${li.total.toFixed(2)}</span>
-              <button onClick={() => removeLineItem(i)} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-            </div>
-          ))}
-          <button onClick={addLineItem} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
-            <Plus size={14} /> Add line item
-          </button>
-          <div className="pt-4 border-t border-border flex justify-between">
-            <span className="text-sm font-semibold text-foreground">Total</span>
-            <span className="text-lg font-semibold text-foreground">${total.toFixed(2)}</span>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <textarea
-        value={current.content}
-        onChange={e => updateSection(activeSection, { content: e.target.value })}
-        placeholder={`Write your ${current.title.toLowerCase()} here...`}
-        className="w-full h-64 px-3 py-2 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-      />
-    );
-  };
-
   return (
     <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
       <BreadcrumbBar items={['Dashboard', 'Proposals', isEdit ? 'Edit Proposal' : 'New Proposal']} />
@@ -206,7 +146,6 @@ export default function ProposalBuilder() {
         </div>
 
         <div className="grid grid-cols-[240px_1fr] gap-6">
-          {/* Section list */}
           <div className="bg-card rounded-lg shadow-widget p-4 space-y-1 h-fit">
             <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Sections</h3>
             {sections.map((s, i) => (
@@ -227,17 +166,22 @@ export default function ProposalBuilder() {
             ))}
           </div>
 
-          {/* Editor */}
           <div className="bg-card rounded-lg shadow-widget p-8">
             <h2 className="text-lg font-semibold text-foreground mb-6">{current?.title}</h2>
-            {renderSectionEditor()}
+            <SectionEditor
+              section={current}
+              onUpdate={(updates) => updateSection(activeSection, updates)}
+              onTitleChange={setTitle}
+              onAddLineItem={addLineItem}
+              onUpdateLineItem={updateLineItem}
+              onRemoveLineItem={removeLineItem}
+            />
           </div>
         </div>
       </div>
 
-      {/* Send Modal */}
       {showSendModal && (
-        <SendModal
+        <ProposalSendModal
           proposalId={proposalId}
           onClose={() => setShowSendModal(false)}
           onSent={() => { setShowSendModal(false); navigate('/proposals'); }}
@@ -247,69 +191,114 @@ export default function ProposalBuilder() {
   );
 }
 
-function SendModal({ proposalId, onClose, onSent }: { proposalId: string; onClose: () => void; onSent: () => void }) {
-  const [accessType, setAccessType] = useState<'link' | 'password'>('link');
-  const [password, setPassword] = useState('');
-  const [sending, setSending] = useState(false);
-  const [sentLink, setSentLink] = useState('');
+function SectionEditor({
+  section,
+  onUpdate,
+  onTitleChange,
+  onAddLineItem,
+  onUpdateLineItem,
+  onRemoveLineItem,
+}: {
+  section: ProposalSection | undefined;
+  onUpdate: (updates: Partial<ProposalSection>) => void;
+  onTitleChange: (title: string) => void;
+  onAddLineItem: () => void;
+  onUpdateLineItem: (idx: number, updates: Partial<ProposalLineItem>) => void;
+  onRemoveLineItem: (idx: number) => void;
+}) {
+  if (!section) return null;
 
-  const handleSend = async () => {
-    setSending(true);
-    try {
-      const result = await sendProposal(proposalId, accessType, accessType === 'password' ? password : undefined);
-      setSentLink(result.link);
-      toast.success('Proposal sent!');
-    } catch {
-      toast.error('Failed to send');
-    } finally {
-      setSending(false);
-    }
-  };
+  if (section.type === 'cover') {
+    const cd = section.coverData || { projectTitle: '', clientName: '', clientEmail: '', yourName: '', date: '' };
+    const updateCover = (field: string, value: string) => {
+      onUpdate({ coverData: { ...cd, [field]: value } });
+      if (field === 'projectTitle') onTitleChange(value);
+    };
+
+    const dateValue = cd.date ? new Date(cd.date) : undefined;
+
+    return (
+      <div className="space-y-4">
+        {[
+          { label: 'Project Title', field: 'projectTitle', placeholder: 'e.g. Website Redesign' },
+          { label: 'Client Name', field: 'clientName', placeholder: 'e.g. Acme Corp' },
+          { label: 'Client Email', field: 'clientEmail', placeholder: 'client@example.com' },
+          { label: 'Your Name', field: 'yourName', placeholder: 'Your full name' },
+        ].map(f => (
+          <div key={f.field} className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{f.label}</label>
+            <input
+              value={(cd as Record<string, string>)[f.field] || ''}
+              onChange={e => updateCover(f.field, e.target.value)}
+              placeholder={f.placeholder}
+              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+        ))}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal h-10",
+                  !dateValue && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateValue ? format(dateValue, "MMMM d, yyyy") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateValue}
+                onSelect={(d) => { if (d) updateCover('date', d.toISOString().split('T')[0]); }}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+    );
+  }
+
+  if (section.type === 'investment') {
+    const items = section.lineItems || [];
+    const total = items.reduce((sum, li) => sum + li.total, 0);
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-[1fr_80px_100px_100px_40px] gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+          <span>Description</span><span>Qty</span><span>Unit Price</span><span>Total</span><span />
+        </div>
+        {items.map((li, i) => (
+          <div key={li.id} className="grid grid-cols-[1fr_80px_100px_100px_40px] gap-2 items-center">
+            <input value={li.description} onChange={e => onUpdateLineItem(i, { description: e.target.value })} placeholder="Line item" className="h-9 px-2 rounded-md border border-input bg-background text-sm" />
+            <input type="number" value={li.quantity} onChange={e => onUpdateLineItem(i, { quantity: Number(e.target.value) })} className="h-9 px-2 rounded-md border border-input bg-background text-sm" min={1} />
+            <input type="number" value={li.unitPrice} onChange={e => onUpdateLineItem(i, { unitPrice: Number(e.target.value) })} className="h-9 px-2 rounded-md border border-input bg-background text-sm" min={0} step={0.01} />
+            <span className="text-sm font-medium text-foreground">${li.total.toFixed(2)}</span>
+            <button onClick={() => onRemoveLineItem(i)} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+          </div>
+        ))}
+        <button onClick={onAddLineItem} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+          <Plus size={14} /> Add line item
+        </button>
+        <div className="pt-4 border-t border-border flex justify-between">
+          <span className="text-sm font-semibold text-foreground">Total</span>
+          <span className="text-lg font-semibold text-foreground">${total.toFixed(2)}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40">
-      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-card rounded-lg shadow-widget p-8 w-full max-w-md">
-        {sentLink ? (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Proposal Sent!</h2>
-            <p className="text-sm text-muted-foreground">Share this link with your client:</p>
-            <input readOnly value={sentLink} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground" onClick={e => (e.target as HTMLInputElement).select()} />
-            <button onClick={onSent} className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">Done</button>
-          </div>
-        ) : (
-          <div className="space-y-5">
-            <h2 className="text-lg font-semibold text-foreground">Send Proposal</h2>
-            <div className="space-y-3">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Access Type</label>
-              <div className="flex gap-3">
-                {(['link', 'password'] as const).map(type => (
-                  <button
-                    key={type}
-                    onClick={() => setAccessType(type)}
-                    className={`flex-1 h-10 rounded-md border text-sm font-medium transition-colors ${
-                      accessType === type ? 'border-primary bg-primary/10 text-primary' : 'border-border text-foreground hover:bg-secondary'
-                    }`}
-                  >
-                    {type === 'link' ? 'Link Only' : 'Password Protected'}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {accessType === 'password' && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</label>
-                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Set a password" className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-              </div>
-            )}
-            <div className="flex gap-2">
-              <button onClick={onClose} className="flex-1 h-10 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary">Cancel</button>
-              <button onClick={handleSend} disabled={sending || (accessType === 'password' && !password)} className="flex-1 h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
-                {sending ? 'Sending...' : 'Send'}
-              </button>
-            </div>
-          </div>
-        )}
-      </motion.div>
-    </div>
+    <textarea
+      value={section.content}
+      onChange={e => onUpdate({ content: e.target.value })}
+      placeholder={`Write your ${section.title.toLowerCase()} here...`}
+      className="w-full h-64 px-3 py-2 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+    />
   );
 }
