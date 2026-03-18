@@ -1,4 +1,4 @@
-import { mockUser, mockProposals, createDefaultSections, type Proposal, type User } from './mock-data';
+import { mockUser, mockProposals, mockActivity, createDefaultSections, type Proposal, type User } from './mock-data';
 
 // In-memory store (resets on refresh)
 let proposals = [...mockProposals];
