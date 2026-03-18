@@ -218,7 +218,7 @@ export default function ClientProposalView() {
                 if (!container) throw new Error('No content');
                 const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
                 // Select all page cards (bg-card rounded-lg shadow-widget)
-                const pageCards = container.querySelectorAll<HTMLElement>('.bg-card.rounded-lg.shadow-widget.min-h-\\[500px\\]');
+                const pageCards = container.querySelectorAll<HTMLElement>('[data-pdf-page]');
                 if (pageCards.length === 0) throw new Error('No pages');
                 const PDF_W = 595.28, PDF_H = 841.89;
                 const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
