@@ -55,6 +55,39 @@ export default function SentProposalView() {
 
   if (!proposal) return null;
 
+  const handleDownloadPdf = async () => {
+    setPdfExporting(true);
+    toast.info('Generating PDF...');
+    try {
+      await new Promise(r => setTimeout(r, 100));
+      const container = pdfRef.current;
+      if (!container) throw new Error('No preview');
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
+      const pageCards = container.querySelectorAll<HTMLElement>('[data-pdf-page]');
+      if (pageCards.length === 0) throw new Error('No pages');
+      const PDF_W = 595.28, PDF_H = 841.89;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      for (let i = 0; i < pageCards.length; i++) {
+        const canvas = await html2canvas(pageCards[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgH = (canvas.height / canvas.width) * PDF_W;
+        if (i > 0) pdf.addPage();
+        if (imgH <= PDF_H) pdf.addImage(imgData, 'JPEG', 0, 0, PDF_W, imgH);
+        else pdf.addImage(imgData, 'JPEG', 0, 0, (canvas.width / canvas.height) * PDF_H, PDF_H);
+      }
+      const cover = proposal.sections.find(s => s.type === 'cover')?.coverData;
+      const clientName = cover?.clientName || proposal.client || 'Client';
+      const projectTitle = cover?.projectTitle || proposal.title || 'Proposal';
+      pdf.save(`${clientName} — ${projectTitle} — v${proposal.version || 1}.pdf`);
+      toast.success('PDF downloaded');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to generate PDF');
+    } finally {
+      setPdfExporting(false);
+    }
+  };
+
   const isAccepted = proposal.status === 'accepted';
   const sentDate = proposal.sentAt
     ? format(new Date(proposal.sentAt), 'MMMM d, yyyy')
