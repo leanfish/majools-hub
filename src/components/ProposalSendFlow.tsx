@@ -21,13 +21,14 @@ interface Props {
 
 type Step = 'preview' | 'settings' | 'confirmation';
 
-export default function ProposalSendFlow({ proposalId, sections, template, companyName, onClose, onSent, previewOnly }: Props) {
+export default function ProposalSendFlow({ proposalId, sections, template, companyName, onClose, onSent, previewOnly, onTemplateChange }: Props) {
   const [step, setStep] = useState<Step>('preview');
   const [accessType, setAccessType] = useState<'link' | 'password'>('link');
   const [password, setPassword] = useState('');
   const [sending, setSending] = useState(false);
   const [sentLink, setSentLink] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   const handleSend = async () => {
     setSending(true);
