@@ -8,7 +8,7 @@ import BreadcrumbBar from '@/components/BreadcrumbBar';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import { templates, getDefaultTemplate, setDefaultTemplate, type TemplateId } from '@/lib/templates';
-import { getSettings, saveSettings, TOGGLEABLE_SECTIONS, DEFAULT_BOILERPLATE, type Settings } from '@/lib/settings-store';
+import { getSettings, saveSettings, TOGGLEABLE_SECTIONS, DEFAULT_BOILERPLATE, DEFAULT_BRAND_COLORS, type Settings, type BrandColors, type LogoDisplayMode } from '@/lib/settings-store';
 import type { SectionType } from '@/lib/mock-data';
 import { Switch } from '@/components/ui/switch';
 
