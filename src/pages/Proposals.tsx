@@ -1,35 +1,61 @@
-import { motion } from "framer-motion";
-import { FileText, Plus, Search } from "lucide-react";
-import BreadcrumbBar from "../components/BreadcrumbBar";
-
-const proposals = [
-  { id: 1, name: "Website Redesign — Acme Corp", value: "$4,500", status: "Sent", date: "Mar 12, 2026" },
-  { id: 2, name: "Brand Identity — Nova Labs", value: "$2,800", status: "Draft", date: "Mar 10, 2026" },
-  { id: 3, name: "SEO Audit — Pinnacle Media", value: "$1,200", status: "Accepted", date: "Mar 8, 2026" },
-  { id: 4, name: "App Prototype — Zenith Inc", value: "$6,500", status: "Sent", date: "Mar 5, 2026" },
-  { id: 5, name: "Marketing Strategy — Bloom Co", value: "$3,200", status: "Draft", date: "Mar 3, 2026" },
-];
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { FileText, Plus, Search, Trash2, MoreHorizontal } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import BreadcrumbBar from '../components/BreadcrumbBar';
+import { getProposals, deleteProposal } from '@/lib/api';
+import type { Proposal } from '@/lib/mock-data';
+import { toast } from 'sonner';
 
 const statusColor: Record<string, string> = {
-  Sent: "bg-primary/20 text-primary",
-  Draft: "bg-secondary text-muted-foreground",
-  Accepted: "bg-green-100 text-green-700",
+  sent: 'bg-primary/20 text-primary',
+  draft: 'bg-secondary text-muted-foreground',
+  accepted: 'bg-green-100 text-green-700',
+  viewed: 'bg-yellow-100 text-yellow-700',
+  declined: 'bg-red-100 text-red-600',
+};
+
+const statusLabel: Record<string, string> = {
+  sent: 'Sent', draft: 'Draft', accepted: 'Accepted', viewed: 'Viewed', declined: 'Declined',
 };
 
 const Proposals = () => {
+  const navigate = useNavigate();
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+
+  const loadProposals = () => {
+    setLoading(true);
+    getProposals().then(setProposals).finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadProposals(); }, []);
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await deleteProposal(id);
+    toast.success('Proposal deleted');
+    loadProposals();
+  };
+
+  const filtered = proposals.filter(p => {
+    const matchesSearch = !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.client.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const formatDate = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
-    >
-      <BreadcrumbBar items={["Dashboard", "Proposals"]} />
+    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}>
+      <BreadcrumbBar items={['Dashboard', 'Proposals']} />
       <div className="max-w-[1400px] mx-auto p-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-foreground">Proposals</h1>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-sm bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Plus size={16} />
-            New Proposal
+          <button onClick={() => navigate('/proposals/new')} className="flex items-center gap-2 px-4 py-2 rounded-sm bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+            <Plus size={16} /> New Proposal
           </button>
         </div>
 
@@ -38,38 +64,66 @@ const Proposals = () => {
             <Search size={16} className="text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search proposals..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by title or client..."
               className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none flex-1"
             />
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="text-sm border border-border rounded-md px-2 py-1 bg-background text-foreground"
+            >
+              <option value="all">All Status</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="viewed">Viewed</option>
+              <option value="accepted">Accepted</option>
+              <option value="declined">Declined</option>
+            </select>
           </div>
 
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-6 py-3">Proposal</th>
-                <th className="text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-6 py-3">Value</th>
+                <th className="text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-6 py-3">Client</th>
                 <th className="text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-6 py-3">Status</th>
-                <th className="text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-6 py-3">Date</th>
+                <th className="text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-6 py-3">Created</th>
+                <th className="text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-6 py-3">Updated</th>
+                <th className="text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {proposals.map((p) => (
-                <tr key={p.id} className="border-b border-border last:border-0 hover:bg-background/50 transition-colors cursor-pointer">
-                  <td className="px-6 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <FileText size={16} className="text-muted-foreground" />
-                      <span className="text-sm font-medium text-foreground">{p.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-3.5 text-sm text-foreground">{p.value}</td>
-                  <td className="px-6 py-3.5">
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-sm ${statusColor[p.status]}`}>
-                      {p.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-sm text-muted-foreground">{p.date}</td>
-                </tr>
-              ))}
+              {loading ? (
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-muted-foreground text-sm">Loading...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-muted-foreground text-sm">No proposals found</td></tr>
+              ) : (
+                filtered.map(p => (
+                  <tr key={p.id} onClick={() => navigate(`/proposals/${p.id}/edit`)} className="border-b border-border last:border-0 hover:bg-background/50 transition-colors cursor-pointer">
+                    <td className="px-6 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <FileText size={16} className="text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground">{p.title}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3.5 text-sm text-foreground">{p.client}</td>
+                    <td className="px-6 py-3.5">
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-sm ${statusColor[p.status]}`}>
+                        {statusLabel[p.status]}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3.5 text-sm text-muted-foreground">{formatDate(p.createdAt)}</td>
+                    <td className="px-6 py-3.5 text-sm text-muted-foreground">{formatDate(p.updatedAt)}</td>
+                    <td className="px-6 py-3.5">
+                      <button onClick={(e) => handleDelete(p.id, e)} className="text-muted-foreground hover:text-destructive transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
