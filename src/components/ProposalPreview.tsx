@@ -66,7 +66,7 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
 
   const renderHtml = (html: string, style?: React.CSSProperties) => (
     <div
-      className="text-sm leading-relaxed prose prose-sm max-w-none prose-headings:text-base prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-2 prose-p:my-1 prose-ul:my-1 prose-li:my-0"
+      className="proposal-prose text-sm leading-relaxed prose prose-sm max-w-none prose-headings:text-base prose-headings:font-semibold"
       style={style}
       dangerouslySetInnerHTML={{ __html: html }}
     />
