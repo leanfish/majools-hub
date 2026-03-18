@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Lock, RefreshCw, ArrowLeft, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import ProposalPreview from '@/components/ProposalPreview';

@@ -291,6 +291,9 @@ export default function ProposalBuilder() {
           </span>
         </div>
         <div className="flex gap-2">
+          <button onClick={handleDownloadPdf} disabled={pdfExporting} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-50">
+            <Download size={16} /> {pdfExporting ? 'Exporting...' : 'Download PDF'}
+          </button>
           <button onClick={handlePreview} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors">
             <Eye size={16} /> Preview
           </button>
@@ -299,6 +302,21 @@ export default function ProposalBuilder() {
           </button>
         </div>
       </div>
+
+      {/* Hidden preview for PDF export */}
+      {pdfExporting && (
+        <div className="fixed left-[-9999px] top-0" style={{ width: 800 }}>
+          <ProposalPreview
+            ref={pdfRef}
+            sections={sections}
+            template={template}
+            companyName={companyName}
+            version={proposalVersion}
+            proposalTitle={title}
+            clientName={sections.find(s => s.type === 'cover')?.coverData?.clientName}
+          />
+        </div>
+      )}
 
       {showSendFlow && (
         <ProposalSendFlow
