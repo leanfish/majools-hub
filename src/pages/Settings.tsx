@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   User, Building2, FileText, CreditCard, Bell,
-  Receipt, Users, Save, Upload, Check, ChevronDown, ChevronRight, Lock,
+  Receipt, Users, Save, Upload, Check, ChevronDown, ChevronRight, Lock, X,
 } from 'lucide-react';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import { useAuth } from '@/lib/auth';
@@ -46,6 +46,7 @@ export default function Settings() {
   const [passwords, setPasswords] = useState({ current: '', new1: '', new2: '' });
   const [expandedBoilerplate, setExpandedBoilerplate] = useState<SectionType | null>(null);
   const [boilerplateEdits, setBoilerplateEdits] = useState<Record<string, string>>({});
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const update = (partial: Partial<Settings>) => setSettings(prev => ({ ...prev, ...partial }));
 
@@ -57,11 +58,36 @@ export default function Settings() {
   const handleSaveCompany = () => {
     saveSettings({
       companyName: settings.companyName,
+      companyLogo: settings.companyLogo,
       companyAddress: settings.companyAddress,
       companyPhone: settings.companyPhone,
       companyWebsite: settings.companyWebsite,
     });
     toast.success('Company settings saved');
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/svg+xml'].includes(file.type)) {
+      toast.error('Please upload a PNG, JPG, or SVG file');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Logo must be under 2 MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      update({ companyLogo: dataUrl });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    update({ companyLogo: '' });
+    if (logoInputRef.current) logoInputRef.current.value = '';
   };
 
   const handleSaveProposals = () => {
@@ -169,13 +195,51 @@ export default function Settings() {
         <p className="text-sm text-muted-foreground mt-1">Your business information appears on proposals.</p>
       </div>
       {renderInput('Company Name', settings.companyName, v => update({ companyName: v }))}
+
+      {/* Logo upload */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Company Logo</label>
-        <div className="w-full h-24 rounded-md border-2 border-dashed border-input bg-background flex items-center justify-center gap-2 text-sm text-muted-foreground cursor-pointer hover:border-primary transition-colors">
-          <Upload size={16} />
-          <span>Upload logo (coming soon)</span>
-        </div>
+        <input
+          ref={logoInputRef}
+          type="file"
+          accept=".png,.jpg,.jpeg,.svg"
+          onChange={handleLogoUpload}
+          className="hidden"
+        />
+        {settings.companyLogo ? (
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-auto p-2 rounded-md border border-border bg-background flex items-center justify-center">
+              <img src={settings.companyLogo} alt="Logo preview" className="h-full max-w-[200px] object-contain" />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => logoInputRef.current?.click()}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Replace
+              </button>
+              <button
+                onClick={handleRemoveLogo}
+                className="text-xs font-medium text-destructive hover:underline flex items-center gap-1"
+              >
+                <X size={12} /> Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => logoInputRef.current?.click()}
+            className="w-full h-24 rounded-md border-2 border-dashed border-input bg-background flex items-center justify-center gap-2 text-sm text-muted-foreground cursor-pointer hover:border-primary transition-colors"
+          >
+            <Upload size={16} />
+            <span>Upload logo (PNG, JPG, SVG)</span>
+          </button>
+        )}
+        <p className="text-[11px] text-muted-foreground">
+          When uploaded, your logo replaces the company name on all client-facing pages.
+        </p>
       </div>
+
       {renderInput('Address', settings.companyAddress, v => update({ companyAddress: v }))}
       {renderInput('Phone', settings.companyPhone, v => update({ companyPhone: v }), 'tel')}
       {renderInput('Website', settings.companyWebsite, v => update({ companyWebsite: v }), 'url')}
