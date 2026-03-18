@@ -183,4 +183,6 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
       })}
     </div>
   );
-}
+});
+
+export default ProposalPreview;
