@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Plus, Search, Trash2, Lock, KeyRound } from 'lucide-react';
+import { FileText, Plus, Search, Trash2, KeyRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BreadcrumbBar from '../components/BreadcrumbBar';
 import { getProposals, deleteProposal } from '@/lib/api';
@@ -56,6 +56,14 @@ const Proposals = () => {
     toast.success('Proposal deleted');
     setDeleteTarget(null);
     loadProposals();
+  };
+
+  const handleRowClick = (p: Proposal) => {
+    if (p.status === 'draft') {
+      navigate(`/proposals/${p.id}/edit`);
+    } else {
+      navigate(`/proposals/${p.id}/view`);
+    }
   };
 
   const filtered = proposals.filter(p => {
@@ -120,7 +128,7 @@ const Proposals = () => {
                   <tr><td colSpan={6} className="px-6 py-8 text-center text-muted-foreground text-sm">No proposals found</td></tr>
                 ) : (
                   filtered.map(p => (
-                    <tr key={p.id} onClick={() => navigate(`/proposals/${p.id}/edit`)} className="border-b border-border last:border-0 hover:bg-background/50 transition-colors cursor-pointer">
+                    <tr key={p.id} onClick={() => handleRowClick(p)} className="border-b border-border last:border-0 hover:bg-background/50 transition-colors cursor-pointer">
                       <td className="px-6 py-3.5">
                         <div className="flex items-center gap-3">
                           <FileText size={16} className="text-muted-foreground" />
@@ -128,11 +136,19 @@ const Proposals = () => {
                           {p.version && p.version > 1 && (
                             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">v{p.version}</span>
                           )}
-                          {p.accessType === 'access-code' && p.accessCode && (
+                        </div>
+                      </td>
+                      <td className="px-6 py-3.5 text-sm text-foreground">{p.client}</td>
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-sm ${statusColor[p.status]}`}>
+                            {statusLabel[p.status]}
+                          </span>
+                          {p.status !== 'draft' && p.accessType === 'access-code' && p.accessCode && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="text-muted-foreground">
-                                  <KeyRound size={13} />
+                                <span className="text-muted-foreground cursor-help" onClick={e => e.stopPropagation()}>
+                                  <KeyRound size={12} />
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -141,12 +157,6 @@ const Proposals = () => {
                             </Tooltip>
                           )}
                         </div>
-                      </td>
-                      <td className="px-6 py-3.5 text-sm text-foreground">{p.client}</td>
-                      <td className="px-6 py-3.5">
-                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-sm ${statusColor[p.status]}`}>
-                          {statusLabel[p.status]}
-                        </span>
                       </td>
                       <td className="px-6 py-3.5 text-sm text-muted-foreground">{formatDate(p.createdAt)}</td>
                       <td className="px-6 py-3.5 text-sm text-muted-foreground">{formatDate(p.updatedAt)}</td>

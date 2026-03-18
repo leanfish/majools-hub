@@ -127,7 +127,7 @@ export async function sendProposal(id: string, accessType: 'link' | 'access-code
   return { link: `${window.location.origin}/p/${publicToken}`, token: publicToken };
 }
 
-// Revise: creates a new v2 draft from a sent proposal
+// Revise: creates a new draft from a sent proposal
 export async function reviseProposal(id: string): Promise<Proposal> {
   requireAuth();
   await delay();
@@ -152,6 +152,40 @@ export async function reviseProposal(id: string): Promise<Proposal> {
   };
   proposals.unshift(revised);
   return revised;
+}
+
+// Get all versions of a proposal (follows parentId chain in both directions)
+export async function getProposalVersions(id: string): Promise<Proposal[]> {
+  requireAuth();
+  await delay();
+  const target = proposals.find(p => p.id === id && !p.isDeleted);
+  if (!target) return [];
+
+  // Find the root (oldest ancestor)
+  let rootId = id;
+  let current = target;
+  while (current.parentId) {
+    const parent = proposals.find(p => p.id === current.parentId && !p.isDeleted);
+    if (!parent) break;
+    rootId = parent.id;
+    current = parent;
+  }
+
+  // Collect chain from root forward
+  const versions: Proposal[] = [];
+  const root = proposals.find(p => p.id === rootId && !p.isDeleted);
+  if (root) {
+    versions.push(root);
+    let currentId = rootId;
+    while (true) {
+      const child = proposals.find(p => p.parentId === currentId && !p.isDeleted);
+      if (!child) break;
+      versions.push(child);
+      currentId = child.id;
+    }
+  }
+
+  return versions.sort((a, b) => (a.version || 1) - (b.version || 1));
 }
 
 // Public (no auth)
