@@ -136,7 +136,7 @@ const Index = () => {
       <div className="max-w-[1400px] mx-auto p-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-foreground">
-            Good morning{user ? `, ${user.name}` : ''}. You have {sentCount} proposal{sentCount !== 1 ? 's' : ''} awaiting signature.
+            {(() => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; })()}{user ? `, ${user.name}` : ''}. You have {sentCount} proposal{sentCount !== 1 ? 's' : ''} awaiting signature.
           </h1>
           <button onClick={() => setShowAddPanel(!showAddPanel)} className="flex items-center gap-2 px-4 py-2 rounded-sm bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
             <Plus size={16} /> Add Widget

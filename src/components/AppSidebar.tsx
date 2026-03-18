@@ -38,7 +38,7 @@ const AppSidebar = () => {
   const navigate = useNavigate();
 
   const renderItem = (item: NavItem) => {
-    const isActive = location.pathname === item.path;
+    const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
 
     return (
       <button
