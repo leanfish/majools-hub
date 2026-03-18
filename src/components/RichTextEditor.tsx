@@ -33,7 +33,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
   // Sync external content changes (but avoid cursor jumps)
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content, false);
+      editor.commands.setContent(content, false as any);
     }
     // Only sync on content prop change, not editor changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
