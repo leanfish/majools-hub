@@ -145,7 +145,7 @@ export default function ProposalBuilder() {
           </div>
         </div>
 
-        <div className="grid grid-cols-[240px_1fr] gap-6">
+        <div className="grid grid-cols-[260px_1fr] gap-6">
           <div className="bg-card rounded-lg shadow-widget p-4 space-y-1 h-fit">
             <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Sections</h3>
             {sections.map((s, i) => (
