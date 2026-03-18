@@ -122,7 +122,7 @@ export default function ClientProposalView() {
         {proposal.sections.map((s, pageIdx) => {
           if (s.type === 'cover' && cover) {
             return (
-              <div key={s.id} className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
+              <div key={s.id} data-pdf-page className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
                 <div className="flex-1 p-8 flex flex-col justify-center space-y-2">
                   <h1 className="text-2xl font-semibold text-foreground">{cover.projectTitle || proposal.title}</h1>
                   <p className="text-muted-foreground">Prepared for <span className="text-foreground font-medium">{cover.clientName || proposal.client}</span></p>
