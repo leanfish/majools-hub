@@ -206,6 +206,47 @@ export default function ClientProposalView() {
             </div>
           )}
         </div>
+
+        {/* Download PDF link */}
+        <div className="text-center pt-2 pb-8">
+          <button
+            onClick={async () => {
+              setPdfExporting(true);
+              toast.info('Generating PDF...');
+              try {
+                const container = mainRef.current;
+                if (!container) throw new Error('No content');
+                const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
+                // Select all page cards (bg-card rounded-lg shadow-widget)
+                const pageCards = container.querySelectorAll<HTMLElement>('.bg-card.rounded-lg.shadow-widget.min-h-\\[500px\\]');
+                if (pageCards.length === 0) throw new Error('No pages');
+                const PDF_W = 595.28, PDF_H = 841.89;
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+                for (let i = 0; i < pageCards.length; i++) {
+                  const canvas = await html2canvas(pageCards[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+                  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                  const imgH = (canvas.height / canvas.width) * PDF_W;
+                  if (i > 0) pdf.addPage();
+                  if (imgH <= PDF_H) pdf.addImage(imgData, 'JPEG', 0, 0, PDF_W, imgH);
+                  else pdf.addImage(imgData, 'JPEG', 0, 0, (canvas.width / canvas.height) * PDF_H, PDF_H);
+                }
+                const clientName = cover?.clientName || proposal.client || 'Client';
+                const projectTitle = cover?.projectTitle || proposal.title || 'Proposal';
+                pdf.save(`${clientName} — ${projectTitle} — v${version}.pdf`);
+                toast.success('PDF downloaded');
+              } catch (err) {
+                console.error(err);
+                toast.error('Failed to generate PDF');
+              } finally {
+                setPdfExporting(false);
+              }
+            }}
+            disabled={pdfExporting}
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            <Download size={12} /> {pdfExporting ? 'Generating...' : 'Download as PDF'}
+          </button>
+        </div>
       </motion.main>
     </div>
   );
