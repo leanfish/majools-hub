@@ -23,7 +23,7 @@ const mainNav: NavItem[] = [
   { title: "Proposals", icon: FileText, path: "/proposals" },
   { title: "Invoicing", icon: Receipt, path: "/invoicing", comingSoon: true },
   { title: "CRM", icon: Users, path: "/crm", comingSoon: true },
-  { title: "Project Management", icon: FolderKanban, path: "/projects", comingSoon: true },
+  { title: "Projects", icon: FolderKanban, path: "/projects", comingSoon: true },
   { title: "Onboarding", icon: Rocket, path: "/onboarding", comingSoon: true },
   { title: "SOPs", icon: BookOpen, path: "/sops", comingSoon: true },
 ];
