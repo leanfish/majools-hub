@@ -12,9 +12,21 @@ export interface ProposalLineItem {
   total: number;
 }
 
+export type SectionType = 'cover' | 'executive-summary' | 'scope' | 'deliverables' | 'timeline' | 'investment' | 'terms' | 'custom';
+
+export const ALL_SECTION_TYPES: { type: SectionType; title: string }[] = [
+  { type: 'cover', title: 'Cover' },
+  { type: 'executive-summary', title: 'Executive Summary' },
+  { type: 'scope', title: 'Scope of Work' },
+  { type: 'deliverables', title: 'Deliverables' },
+  { type: 'timeline', title: 'Timeline' },
+  { type: 'investment', title: 'Investment' },
+  { type: 'terms', title: 'Terms & Conditions' },
+];
+
 export interface ProposalSection {
   id: string;
-  type: 'cover' | 'executive-summary' | 'scope' | 'deliverables' | 'timeline' | 'investment' | 'terms';
+  type: SectionType;
   title: string;
   content: string;
   lineItems?: ProposalLineItem[];
