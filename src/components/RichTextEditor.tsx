@@ -19,7 +19,7 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
       }),
       Underline,
     ],
-    content,
+    content: content || '',
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -28,12 +28,15 @@ export default function RichTextEditor({ content, onChange, placeholder, classNa
         class: 'prose prose-sm max-w-none focus:outline-none min-h-[200px] px-3 py-2 text-sm text-foreground',
       },
     },
+    parseOptions: {
+      preserveWhitespace: 'full',
+    },
   });
 
   // Sync external content changes (but avoid cursor jumps)
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content, false as any);
+      editor.commands.setContent(content || '', false);
     }
     // Only sync on content prop change, not editor changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
