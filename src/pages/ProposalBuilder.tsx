@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Save, Send, CalendarIcon, Eye, HelpCircle, RefreshCw, Lock } from 'lucide-react';
+import { Plus, Trash2, Save, Send, CalendarIcon, Eye, HelpCircle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import ProposalSendFlow from '@/components/ProposalSendFlow';
 import SectionsPanel from '@/components/SectionsPanel';
 import SectionHelpTips from '@/components/SectionHelpTips';
-import { getProposal, createProposal, updateProposal, reviseProposal } from '@/lib/api';
+import VersionHistoryDrawer from '@/components/VersionHistoryDrawer';
+import { getProposal, createProposal, updateProposal } from '@/lib/api';
 import type { ProposalSection, ProposalLineItem, SectionType } from '@/lib/mock-data';
 import { createDefaultSections, BOILERPLATE_CONTENT } from '@/lib/mock-data';
 import { useAuth } from '@/lib/auth';
@@ -34,11 +35,8 @@ export default function ProposalBuilder() {
   const [proposalId, setProposalId] = useState(id || '');
   const [template, setTemplate] = useState<TemplateId>(getDefaultTemplate());
   const [showHelp, setShowHelp] = useState(false);
-  const [proposalStatus, setProposalStatus] = useState<string>('draft');
   const [proposalVersion, setProposalVersion] = useState(1);
-
-  const isSent = proposalStatus !== 'draft';
-  const readOnly = isSent;
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
 
   // Auto-populate company name from Settings, fallback to user name
   useEffect(() => {
@@ -57,10 +55,14 @@ export default function ProposalBuilder() {
   useEffect(() => {
     if (isEdit && id) {
       getProposal(id).then(p => {
+        // If sent, redirect to read-only view
+        if (p.status !== 'draft') {
+          navigate(`/proposals/${p.id}/view`, { replace: true });
+          return;
+        }
         setTitle(p.title);
         setSections(p.sections);
         setProposalId(p.id);
-        setProposalStatus(p.status);
         setProposalVersion(p.version || 1);
         if ((p as any).template) setTemplate((p as any).template);
       }).catch(() => {
@@ -167,16 +169,6 @@ export default function ProposalBuilder() {
     setShowSendFlow(true);
   };
 
-  const handleRevise = async () => {
-    try {
-      const revised = await reviseProposal(proposalId);
-      toast.success(`Created v${revised.version} draft`);
-      navigate(`/proposals/${revised.id}/edit`);
-    } catch {
-      toast.error('Failed to create revision');
-    }
-  };
-
   const current = sections[activeSection];
   const currentTemplate = templates.find(t => t.id === template);
   const companyName = sections.find(s => s.type === 'cover')?.coverData?.companyName || '';
@@ -192,11 +184,6 @@ export default function ProposalBuilder() {
               {proposalVersion > 1 && (
                 <span className="text-xs font-medium px-2 py-0.5 rounded-sm bg-secondary text-muted-foreground">v{proposalVersion}</span>
               )}
-              {readOnly && (
-                <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-sm bg-primary/10 text-primary">
-                  <Lock size={10} /> Read Only
-                </span>
-              )}
             </div>
           </div>
 
@@ -208,7 +195,6 @@ export default function ProposalBuilder() {
               onReorder={handleReorder}
               onDelete={handleDeleteSection}
               onAdd={handleAddSection}
-              readOnly={readOnly}
             />
 
             <div className="bg-card rounded-lg shadow-widget p-8">
@@ -231,7 +217,6 @@ export default function ProposalBuilder() {
                 onAddLineItem={addLineItem}
                 onUpdateLineItem={updateLineItem}
                 onRemoveLineItem={removeLineItem}
-                readOnly={readOnly}
               />
             </div>
           </div>
@@ -241,13 +226,12 @@ export default function ProposalBuilder() {
       {/* Sticky bottom action bar */}
       <div className="sticky bottom-0 z-10 border-t border-border bg-card px-8 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {readOnly ? (
-            <button onClick={handleRevise} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-              <RefreshCw size={16} /> Revise (Create v{proposalVersion + 1})
-            </button>
-          ) : (
-            <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-50">
-              <Save size={16} /> {saving ? 'Saving...' : 'Save Draft'}
+          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-50">
+            <Save size={16} /> {saving ? 'Saving...' : 'Save Draft'}
+          </button>
+          {proposalId && (
+            <button onClick={() => setShowVersionHistory(true)} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors">
+              <Clock size={16} /> Version History
             </button>
           )}
           <span className="text-xs text-muted-foreground">
@@ -258,11 +242,9 @@ export default function ProposalBuilder() {
           <button onClick={handlePreview} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors">
             <Eye size={16} /> Preview
           </button>
-          {!readOnly && (
-            <button onClick={handleSendClick} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-              <Send size={16} /> Send Proposal
-            </button>
-          )}
+          <button onClick={handleSendClick} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+            <Send size={16} /> Send Proposal
+          </button>
         </div>
       </div>
 
@@ -282,6 +264,12 @@ export default function ProposalBuilder() {
       {showHelp && current && current.type !== 'custom' && (
         <SectionHelpTips sectionType={current.type} onClose={() => setShowHelp(false)} />
       )}
+
+      <VersionHistoryDrawer
+        proposalId={proposalId}
+        open={showVersionHistory}
+        onClose={() => setShowVersionHistory(false)}
+      />
     </motion.div>
   );
 }
@@ -293,7 +281,6 @@ function SectionEditor({
   onAddLineItem,
   onUpdateLineItem,
   onRemoveLineItem,
-  readOnly,
 }: {
   section: ProposalSection | undefined;
   onUpdate: (updates: Partial<ProposalSection>) => void;
@@ -301,7 +288,6 @@ function SectionEditor({
   onAddLineItem: () => void;
   onUpdateLineItem: (idx: number, updates: Partial<ProposalLineItem>) => void;
   onRemoveLineItem: (idx: number) => void;
-  readOnly?: boolean;
 }) {
   if (!section) return null;
 
@@ -328,43 +314,35 @@ function SectionEditor({
               value={(cd as Record<string, string>)[f.field] || ''}
               onChange={e => updateCover(f.field, e.target.value)}
               placeholder={f.placeholder}
-              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
-              disabled={readOnly}
+              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         ))}
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</label>
-          {readOnly ? (
-            <div className="h-10 px-3 flex items-center rounded-md border border-input bg-background text-sm text-foreground opacity-60">
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateValue ? format(dateValue, "MMMM d, yyyy") : 'No date set'}
-            </div>
-          ) : (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal h-10",
-                    !dateValue && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateValue ? format(dateValue, "MMMM d, yyyy") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dateValue}
-                  onSelect={(d) => { if (d) updateCover('date', d.toISOString().split('T')[0]); }}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal h-10",
+                  !dateValue && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateValue ? format(dateValue, "MMMM d, yyyy") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateValue}
+                onSelect={(d) => { if (d) updateCover('date', d.toISOString().split('T')[0]); }}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     );
@@ -380,20 +358,16 @@ function SectionEditor({
         </div>
         {items.map((li, i) => (
           <div key={li.id} className="grid grid-cols-[1fr_80px_100px_100px_40px] gap-2 items-center">
-            <input value={li.description} onChange={e => onUpdateLineItem(i, { description: e.target.value })} placeholder="Line item" className="h-9 px-2 rounded-md border border-input bg-background text-sm disabled:opacity-60" disabled={readOnly} />
-            <input type="number" value={li.quantity} onChange={e => onUpdateLineItem(i, { quantity: Number(e.target.value) })} className="h-9 px-2 rounded-md border border-input bg-background text-sm disabled:opacity-60" min={1} disabled={readOnly} />
-            <input type="number" value={li.unitPrice} onChange={e => onUpdateLineItem(i, { unitPrice: Number(e.target.value) })} className="h-9 px-2 rounded-md border border-input bg-background text-sm disabled:opacity-60" min={0} step={0.01} disabled={readOnly} />
+            <input value={li.description} onChange={e => onUpdateLineItem(i, { description: e.target.value })} placeholder="Line item" className="h-9 px-2 rounded-md border border-input bg-background text-sm" />
+            <input type="number" value={li.quantity} onChange={e => onUpdateLineItem(i, { quantity: Number(e.target.value) })} className="h-9 px-2 rounded-md border border-input bg-background text-sm" min={1} />
+            <input type="number" value={li.unitPrice} onChange={e => onUpdateLineItem(i, { unitPrice: Number(e.target.value) })} className="h-9 px-2 rounded-md border border-input bg-background text-sm" min={0} step={0.01} />
             <span className="text-sm font-medium text-foreground">${li.total.toFixed(2)}</span>
-            {!readOnly && (
-              <button onClick={() => onRemoveLineItem(i)} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-            )}
+            <button onClick={() => onRemoveLineItem(i)} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
           </div>
         ))}
-        {!readOnly && (
-          <button onClick={onAddLineItem} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
-            <Plus size={14} /> Add line item
-          </button>
-        )}
+        <button onClick={onAddLineItem} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+          <Plus size={14} /> Add line item
+        </button>
         <div className="pt-4 border-t border-border flex justify-between">
           <span className="text-sm font-semibold text-foreground">Total</span>
           <span className="text-lg font-semibold text-foreground">${total.toFixed(2)}</span>
@@ -407,8 +381,7 @@ function SectionEditor({
       value={section.content}
       onChange={e => onUpdate({ content: e.target.value })}
       placeholder={`Write your ${section.title.toLowerCase()} here...`}
-      className="w-full h-64 px-3 py-2 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-60"
-      disabled={readOnly}
+      className="w-full h-64 px-3 py-2 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
     />
   );
 }

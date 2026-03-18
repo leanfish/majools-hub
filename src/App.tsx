@@ -9,6 +9,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import Index from "./pages/Index";
 import Proposals from "./pages/Proposals";
 import ProposalBuilder from "./pages/ProposalBuilder";
+import SentProposalView from "./pages/SentProposalView";
 import ClientProposalView from "./pages/ClientProposalView";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/proposals" element={<Proposals />} />
               <Route path="/proposals/new" element={<ProposalBuilder />} />
               <Route path="/proposals/:id/edit" element={<ProposalBuilder />} />
+              <Route path="/proposals/:id/view" element={<SentProposalView />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/help" element={<Help />} />
             </Route>
