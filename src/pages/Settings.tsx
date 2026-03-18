@@ -59,6 +59,8 @@ export default function Settings() {
     saveSettings({
       companyName: settings.companyName,
       companyLogo: settings.companyLogo,
+      logoDisplayMode: settings.logoDisplayMode,
+      brandColors: settings.brandColors,
       companyAddress: settings.companyAddress,
       companyPhone: settings.companyPhone,
       companyWebsite: settings.companyWebsite,
