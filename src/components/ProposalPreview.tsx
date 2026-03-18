@@ -46,8 +46,8 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
   );
 
   const renderSectionCard = (section: ProposalSection, content: React.ReactNode, pageIdx: number, hideFooter = false) => (
-    <div key={section.id} data-pdf-page className="bg-white rounded-lg shadow-md min-h-[500px] overflow-hidden flex flex-col">
-      <div className="flex-1">{content}</div>
+    <div key={section.id} data-pdf-page className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col" style={{ aspectRatio: '8.5 / 11' }}>
+      <div className="flex-1 overflow-hidden">{content}</div>
       {!hideFooter && renderFooter(pageIdx)}
     </div>
   );
