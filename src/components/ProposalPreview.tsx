@@ -13,7 +13,7 @@ interface Props {
   acceptedAt?: string;
 }
 
-export default function ProposalPreview({ sections, template, companyName, version, sentAt, proposalTitle, clientName }: Props) {
+export default function ProposalPreview({ sections, template, companyName, version, sentAt, proposalTitle, clientName, acceptedAt }: Props) {
   const cover = sections.find(s => s.type === 'cover')?.coverData;
   const dateDisplay = cover?.date
     ? format(new Date(cover.date), 'MMMM d, yyyy')
