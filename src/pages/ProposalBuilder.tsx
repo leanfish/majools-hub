@@ -244,6 +244,7 @@ export default function ProposalBuilder() {
           onClose={() => setShowSendFlow(false)}
           onSent={() => { setShowSendFlow(false); navigate('/proposals'); }}
           previewOnly={previewOnly}
+          onTemplateChange={setTemplate}
         />
       )}
 

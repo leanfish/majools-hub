@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, X, ArrowLeft, Eye } from 'lucide-react';
+import { Copy, Check, X, ArrowLeft, Eye, Palette } from 'lucide-react';
 import { sendProposal } from '@/lib/api';
 import { toast } from 'sonner';
 import ProposalPreview from './ProposalPreview';
+import TemplateSelectorModal from './TemplateSelectorModal';
 import type { ProposalSection } from '@/lib/mock-data';
 import type { TemplateId } from '@/lib/templates';
 
@@ -15,17 +16,19 @@ interface Props {
   onClose: () => void;
   onSent: () => void;
   previewOnly?: boolean;
+  onTemplateChange?: (id: TemplateId) => void;
 }
 
 type Step = 'preview' | 'settings' | 'confirmation';
 
-export default function ProposalSendFlow({ proposalId, sections, template, companyName, onClose, onSent, previewOnly }: Props) {
+export default function ProposalSendFlow({ proposalId, sections, template, companyName, onClose, onSent, previewOnly, onTemplateChange }: Props) {
   const [step, setStep] = useState<Step>('preview');
   const [accessType, setAccessType] = useState<'link' | 'password'>('link');
   const [password, setPassword] = useState('');
   const [sending, setSending] = useState(false);
   const [sentLink, setSentLink] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   const handleSend = async () => {
     setSending(true);
@@ -63,6 +66,15 @@ export default function ProposalSendFlow({ proposalId, sections, template, compa
             <span className="text-sm font-medium text-foreground">
               {step === 'preview' ? 'Preview' : step === 'settings' ? 'Send Settings' : 'Sent!'}
             </span>
+            {step === 'preview' && onTemplateChange && (
+              <button
+                onClick={() => setShowTemplateModal(true)}
+                className="flex items-center gap-1.5 ml-3 px-3 py-1.5 rounded-md border border-border text-xs font-medium text-foreground hover:bg-secondary transition-colors"
+              >
+                <Palette size={14} />
+                Change Template
+              </button>
+            )}
           </div>
           {!previewOnly && (
             <div className="flex items-center gap-1 ml-4">
@@ -188,6 +200,13 @@ export default function ProposalSendFlow({ proposalId, sections, template, compa
           )}
         </AnimatePresence>
       </div>
+      {showTemplateModal && onTemplateChange && (
+        <TemplateSelectorModal
+          current={template}
+          onSelect={onTemplateChange}
+          onClose={() => setShowTemplateModal(false)}
+        />
+      )}
     </div>
   );
 }
