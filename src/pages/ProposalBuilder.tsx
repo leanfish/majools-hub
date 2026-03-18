@@ -236,6 +236,7 @@ export default function ProposalBuilder() {
             </div>
           </div>
         </div>
+      </div>
 
       {/* Sticky bottom action bar */}
       <div className="sticky bottom-0 z-10 border-t border-border bg-card px-8 py-3 flex items-center justify-between">
