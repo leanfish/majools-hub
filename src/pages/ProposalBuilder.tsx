@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GripVertical, Plus, Trash2, Save, Send, CalendarIcon, Eye, Palette } from 'lucide-react';
+import { Plus, Trash2, Save, Send, CalendarIcon, Eye, Palette } from 'lucide-react';
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import ProposalSendFlow from '@/components/ProposalSendFlow';
 import TemplateSelectorModal from '@/components/TemplateSelectorModal';
+import SectionsPanel from '@/components/SectionsPanel';
 import { getProposal, createProposal, updateProposal } from '@/lib/api';
-import type { ProposalSection, ProposalLineItem } from '@/lib/mock-data';
+import type { ProposalSection, ProposalLineItem, SectionType } from '@/lib/mock-data';
 import { createDefaultSections } from '@/lib/mock-data';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
@@ -16,12 +17,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getDefaultTemplate, templates, type TemplateId } from '@/lib/templates';
-
-const getSectionNavLabel = (section: ProposalSection) => {
-  if (section.type === 'executive-summary') return 'Summary';
-  if (section.type === 'terms') return 'Terms';
-  return section.title;
-};
 
 export default function ProposalBuilder() {
   const { id } = useParams();
