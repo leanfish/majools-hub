@@ -182,10 +182,10 @@ export default function ProposalBuilder() {
   const companyName = sections.find(s => s.type === 'cover')?.coverData?.companyName || '';
 
   return (
-    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="flex flex-col h-[calc(100vh-48px)]">
+    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="relative min-h-[calc(100vh-48px)]">
       <BreadcrumbBar items={['Dashboard', 'Proposals', isEdit ? 'Edit Proposal' : 'New Proposal']} />
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-[1400px] mx-auto p-8 pb-24">
+      <div>
+        <div className="max-w-[1400px] mx-auto p-8 pb-20">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold text-foreground">{isEdit ? 'Edit Proposal' : 'New Proposal'}</h1>
@@ -238,8 +238,8 @@ export default function ProposalBuilder() {
         </div>
       </div>
 
-      {/* Fixed bottom action bar */}
-      <div className="border-t border-border bg-card px-8 py-3 flex items-center justify-between">
+      {/* Sticky bottom action bar */}
+      <div className="sticky bottom-0 z-10 border-t border-border bg-card px-8 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {readOnly ? (
             <button onClick={handleRevise} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
