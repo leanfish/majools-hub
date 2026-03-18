@@ -3,7 +3,7 @@ import { getCurrentUser } from './api';
 import type { User } from './mock-data';
 
 interface AuthContextType {
-  user: UserType | null;
+  user: User | null;
   isAuthenticated: boolean;
   setToken: (token: string) => void;
   logout: () => void;
@@ -18,7 +18,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setTokenState] = useState<string | null>(localStorage.getItem('majools_token'));
-  const [user, setUser] = useState<UserType | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (token) {
