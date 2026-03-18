@@ -14,7 +14,7 @@ interface Props {
   acceptedAt?: string;
 }
 
-export default function ProposalPreview({ sections, template, companyName, version, sentAt, proposalTitle, clientName, acceptedAt }: Props) {
+const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPreview({ sections, template, companyName, version, sentAt, proposalTitle, clientName, acceptedAt }, ref) {
   const cover = sections.find(s => s.type === 'cover')?.coverData;
   const dateDisplay = cover?.date
     ? format(new Date(cover.date), 'MMMM d, yyyy')
