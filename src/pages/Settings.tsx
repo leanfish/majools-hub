@@ -27,11 +27,8 @@ const NAV_ITEMS: { id: SettingsSection; label: string; icon: typeof User; disabl
   { id: 'crm', label: 'CRM', icon: Users, disabled: true },
 ];
 
-const thumbnailStyles: Record<TemplateId, { bg: string; accent: string }> = {
-  classic: { bg: 'bg-white', accent: 'bg-gray-200' },
-  modern: { bg: 'bg-white', accent: 'bg-[#3DCEE9]' },
-  branded: { bg: 'bg-gray-900', accent: 'bg-[#3DCEE9]' },
-};
+
+
 
 export default function Settings() {
   const { user } = useAuth();
