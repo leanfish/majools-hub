@@ -5,6 +5,7 @@ import { Plus, Trash2, Save, Send, CalendarIcon, Eye, HelpCircle, Clock, Downloa
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import ProposalSendFlow from '@/components/ProposalSendFlow';
+import ProposalPreview from '@/components/ProposalPreview';
 import SectionsPanel from '@/components/SectionsPanel';
 import SectionHelpTips from '@/components/SectionHelpTips';
 import VersionHistoryDrawer from '@/components/VersionHistoryDrawer';
