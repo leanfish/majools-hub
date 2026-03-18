@@ -117,7 +117,7 @@ export default function SectionsPanel({
             <Plus size={14} /> Add Section
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-2" align="start">
+        <PopoverContent className="w-72 p-2" align="start">
           <div className="space-y-1">
             {availableSections.map(s => (
               <button
