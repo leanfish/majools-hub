@@ -1,13 +1,28 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Upload, Check } from 'lucide-react';
+import {
+  User, Building2, FileText, CreditCard, Bell,
+  Receipt, Users, Save, Upload, Check, ChevronDown, ChevronRight, Lock,
+} from 'lucide-react';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import { templates, getDefaultTemplate, setDefaultTemplate, type TemplateId } from '@/lib/templates';
-import { getSettings, saveSettings, TOGGLEABLE_SECTIONS } from '@/lib/settings-store';
+import { getSettings, saveSettings, TOGGLEABLE_SECTIONS, DEFAULT_BOILERPLATE, type Settings } from '@/lib/settings-store';
 import type { SectionType } from '@/lib/mock-data';
 import { Switch } from '@/components/ui/switch';
+
+type SettingsSection = 'profile' | 'company' | 'proposals' | 'billing' | 'notifications' | 'invoicing' | 'crm';
+
+const NAV_ITEMS: { id: SettingsSection; label: string; icon: typeof User; disabled?: boolean }[] = [
+  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'company', label: 'Company', icon: Building2 },
+  { id: 'proposals', label: 'Proposals', icon: FileText },
+  { id: 'billing', label: 'Billing', icon: CreditCard },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'invoicing', label: 'Invoicing', icon: Receipt, disabled: true },
+  { id: 'crm', label: 'CRM', icon: Users, disabled: true },
+];
 
 const thumbnailStyles: Record<TemplateId, { bg: string; accent: string }> = {
   classic: { bg: 'bg-white', accent: 'bg-gray-200' },
@@ -17,110 +32,386 @@ const thumbnailStyles: Record<TemplateId, { bg: string; accent: string }> = {
 
 export default function Settings() {
   const { user } = useAuth();
-  const settings = getSettings();
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [company, setCompany] = useState(settings.companyName || '');
+  const [activeSection, setActiveSection] = useState<SettingsSection>('profile');
+  const [settings, setSettings] = useState<Settings>(() => {
+    const s = getSettings();
+    return {
+      ...s,
+      profileName: s.profileName || user?.name || '',
+      profileEmail: s.profileEmail || user?.email || '',
+    };
+  });
   const [defaultTpl, setDefaultTpl] = useState<TemplateId>(getDefaultTemplate());
-  const [enabledSections, setEnabledSections] = useState<SectionType[]>(settings.defaultSections);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwords, setPasswords] = useState({ current: '', new1: '', new2: '' });
+  const [expandedBoilerplate, setExpandedBoilerplate] = useState<SectionType | null>(null);
+  const [boilerplateEdits, setBoilerplateEdits] = useState<Record<string, string>>({});
 
-  const toggleSection = (type: SectionType) => {
-    setEnabledSections(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-    );
+  const update = (partial: Partial<Settings>) => setSettings(prev => ({ ...prev, ...partial }));
+
+  const handleSaveProfile = () => {
+    saveSettings({ profileName: settings.profileName, profileEmail: settings.profileEmail });
+    toast.success('Profile saved');
   };
 
-  const handleSave = () => {
+  const handleSaveCompany = () => {
+    saveSettings({
+      companyName: settings.companyName,
+      companyAddress: settings.companyAddress,
+      companyPhone: settings.companyPhone,
+      companyWebsite: settings.companyWebsite,
+    });
+    toast.success('Company settings saved');
+  };
+
+  const handleSaveProposals = () => {
     setDefaultTemplate(defaultTpl);
-    saveSettings({ companyName: company, defaultSections: enabledSections });
-    toast.success('Settings saved');
+    saveSettings({ defaultSections: settings.defaultSections });
+    toast.success('Proposal settings saved');
+  };
+
+  const handleSaveBoilerplate = (type: SectionType) => {
+    const text = boilerplateEdits[type] ?? settings.boilerplate[type] ?? '';
+    const newBoilerplate = { ...settings.boilerplate, [type]: text };
+    update({ boilerplate: newBoilerplate });
+    saveSettings({ boilerplate: newBoilerplate });
+    toast.success('Boilerplate saved');
+  };
+
+  const handleSaveNotifications = () => {
+    saveSettings({
+      notificationsEmail: settings.notificationsEmail,
+      notifyProposalViewed: settings.notifyProposalViewed,
+      notifyProposalAccepted: settings.notifyProposalAccepted,
+      notifyProposalDeclined: settings.notifyProposalDeclined,
+    });
+    toast.success('Notification settings saved');
+  };
+
+  const toggleSection = (type: SectionType) => {
+    update({
+      defaultSections: settings.defaultSections.includes(type)
+        ? settings.defaultSections.filter(t => t !== type)
+        : [...settings.defaultSections, type],
+    });
+  };
+
+  const handlePasswordSave = () => {
+    if (!passwords.current || !passwords.new1) return;
+    if (passwords.new1 !== passwords.new2) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    toast.success('Password changed');
+    setPasswords({ current: '', new1: '', new2: '' });
+    setShowPasswordForm(false);
+  };
+
+  const renderInput = (label: string, value: string, onChange: (v: string) => void, type = 'text') => (
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+    </div>
+  );
+
+  const SaveButton = ({ onClick }: { onClick: () => void }) => (
+    <button onClick={onClick} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+      <Save size={16} /> Save
+    </button>
+  );
+
+  // ─── Section renderers ───
+
+  const renderProfile = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Profile</h2>
+        <p className="text-sm text-muted-foreground mt-1">Manage your personal information.</p>
+      </div>
+      {renderInput('Name', settings.profileName, v => update({ profileName: v }))}
+      {renderInput('Email', settings.profileEmail, v => update({ profileEmail: v }), 'email')}
+
+      <div className="space-y-3 pt-2">
+        <button
+          onClick={() => setShowPasswordForm(!showPasswordForm)}
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          Change Password
+        </button>
+        {showPasswordForm && (
+          <div className="space-y-3 p-4 rounded-md border border-border bg-muted/30">
+            {renderInput('Current Password', passwords.current, v => setPasswords(p => ({ ...p, current: v })), 'password')}
+            {renderInput('New Password', passwords.new1, v => setPasswords(p => ({ ...p, new1: v })), 'password')}
+            {renderInput('Confirm New Password', passwords.new2, v => setPasswords(p => ({ ...p, new2: v })), 'password')}
+            <button
+              onClick={handlePasswordSave}
+              className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              Update Password
+            </button>
+          </div>
+        )}
+      </div>
+
+      <SaveButton onClick={handleSaveProfile} />
+    </div>
+  );
+
+  const renderCompany = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Company</h2>
+        <p className="text-sm text-muted-foreground mt-1">Your business information appears on proposals.</p>
+      </div>
+      {renderInput('Company Name', settings.companyName, v => update({ companyName: v }))}
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Company Logo</label>
+        <div className="w-full h-24 rounded-md border-2 border-dashed border-input bg-background flex items-center justify-center gap-2 text-sm text-muted-foreground cursor-pointer hover:border-primary transition-colors">
+          <Upload size={16} />
+          <span>Upload logo (coming soon)</span>
+        </div>
+      </div>
+      {renderInput('Address', settings.companyAddress, v => update({ companyAddress: v }))}
+      {renderInput('Phone', settings.companyPhone, v => update({ companyPhone: v }), 'tel')}
+      {renderInput('Website', settings.companyWebsite, v => update({ companyWebsite: v }), 'url')}
+      <SaveButton onClick={handleSaveCompany} />
+    </div>
+  );
+
+  const renderProposals = () => (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Proposals</h2>
+        <p className="text-sm text-muted-foreground mt-1">Configure defaults for new proposals.</p>
+      </div>
+
+      {/* Default Template */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Default Template</h3>
+        <p className="text-xs text-muted-foreground">New proposals will use this template by default.</p>
+        <div className="grid grid-cols-3 gap-3">
+          {templates.map(t => {
+            const style = thumbnailStyles[t.id];
+            const isSelected = defaultTpl === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setDefaultTpl(t.id)}
+                className={`rounded-lg border-2 p-1 transition-all text-left ${
+                  isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className={`${style.bg} rounded-md h-20 p-2 flex flex-col gap-1.5 relative`}>
+                  <div className={`${style.accent} h-1.5 w-10 rounded-full`} />
+                  <div className={`${style.accent} h-1 w-14 rounded-full opacity-40`} />
+                  <div className={`${style.accent} h-1 w-12 rounded-full opacity-40`} />
+                  {isSelected && (
+                    <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                      <Check size={10} className="text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs font-medium text-foreground mt-1 px-1">{t.name}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Default Sections */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Default Sections</h3>
+        <p className="text-xs text-muted-foreground">Toggle sections and edit their default boilerplate content.</p>
+        <div className="space-y-1">
+          {/* Cover — always on */}
+          <div className="flex items-center justify-between py-2.5 px-3 rounded-md bg-muted/50">
+            <div className="flex items-center gap-2">
+              <Lock size={12} className="text-muted-foreground" />
+              <span className="text-sm text-foreground font-medium">Cover</span>
+            </div>
+            <Switch checked disabled className="opacity-50" />
+          </div>
+
+          {TOGGLEABLE_SECTIONS.map(s => {
+            const isExpanded = expandedBoilerplate === s.type;
+            const editValue = boilerplateEdits[s.type] ?? settings.boilerplate[s.type] ?? DEFAULT_BOILERPLATE[s.type] ?? '';
+            return (
+              <div key={s.type}>
+                <div className="flex items-center justify-between py-2.5 px-3 rounded-md hover:bg-muted/30 transition-colors">
+                  <button
+                    onClick={() => setExpandedBoilerplate(isExpanded ? null : s.type)}
+                    className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
+                  >
+                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    <span>{s.label}</span>
+                  </button>
+                  <Switch
+                    checked={settings.defaultSections.includes(s.type)}
+                    onCheckedChange={() => toggleSection(s.type)}
+                  />
+                </div>
+                {isExpanded && (
+                  <div className="ml-6 mr-3 mb-2 p-3 rounded-md border border-border bg-muted/20 space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Edit the default boilerplate for this section. Use placeholders: <code className="bg-muted px-1 py-0.5 rounded text-[10px]">[Client Name]</code> <code className="bg-muted px-1 py-0.5 rounded text-[10px]">[Project Title]</code> <code className="bg-muted px-1 py-0.5 rounded text-[10px]">[Your Company]</code> <code className="bg-muted px-1 py-0.5 rounded text-[10px]">[Date]</code>
+                    </p>
+                    <textarea
+                      value={editValue}
+                      onChange={e => setBoilerplateEdits(prev => ({ ...prev, [s.type]: e.target.value }))}
+                      rows={5}
+                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    />
+                    <button
+                      onClick={() => handleSaveBoilerplate(s.type)}
+                      className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                    >
+                      Save
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <SaveButton onClick={handleSaveProposals} />
+    </div>
+  );
+
+  const renderBilling = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Billing</h2>
+        <p className="text-sm text-muted-foreground mt-1">Manage your subscription and payment methods.</p>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Active Jools</h3>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between py-3 px-4 rounded-md border border-border">
+            <div className="flex items-center gap-3">
+              <FileText size={16} className="text-primary" />
+              <span className="text-sm font-medium text-foreground">Proposals</span>
+            </div>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-sm bg-primary/10 text-primary uppercase tracking-wider">Trial</span>
+          </div>
+          {[
+            { label: 'Invoicing', icon: Receipt },
+            { label: 'CRM', icon: Users },
+          ].map(j => (
+            <div key={j.label} className="flex items-center justify-between py-3 px-4 rounded-md border border-border">
+              <div className="flex items-center gap-3">
+                <j.icon size={16} className="text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{j.label}</span>
+              </div>
+              <button className="text-xs font-medium px-3 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                Add
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Payment Method</h3>
+        <div className="py-4 px-4 rounded-md border border-dashed border-border text-sm text-muted-foreground">
+          No payment method on file
+        </div>
+      </div>
+
+      <div className="p-4 rounded-md bg-primary/5 border border-primary/20">
+        <p className="text-sm text-foreground">
+          Your <span className="font-semibold">30-day free trial</span> is active. No credit card required.
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderNotifications = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Notifications</h2>
+        <p className="text-sm text-muted-foreground mt-1">Control how and when you receive alerts.</p>
+      </div>
+
+      <div className="space-y-2">
+        {[
+          { label: 'Email notifications', key: 'notificationsEmail' as const, desc: 'Receive email alerts for proposal activity' },
+          { label: 'Proposal viewed by client', key: 'notifyProposalViewed' as const, desc: 'When a client opens your proposal' },
+          { label: 'Proposal accepted', key: 'notifyProposalAccepted' as const, desc: 'When a client accepts your proposal' },
+          { label: 'Proposal declined', key: 'notifyProposalDeclined' as const, desc: 'When a client declines your proposal' },
+        ].map(n => (
+          <div key={n.key} className="flex items-center justify-between py-3 px-3 rounded-md hover:bg-muted/30 transition-colors">
+            <div>
+              <p className="text-sm font-medium text-foreground">{n.label}</p>
+              <p className="text-xs text-muted-foreground">{n.desc}</p>
+            </div>
+            <Switch
+              checked={settings[n.key]}
+              onCheckedChange={v => update({ [n.key]: v })}
+            />
+          </div>
+        ))}
+      </div>
+
+      <SaveButton onClick={handleSaveNotifications} />
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'profile': return renderProfile();
+      case 'company': return renderCompany();
+      case 'proposals': return renderProposals();
+      case 'billing': return renderBilling();
+      case 'notifications': return renderNotifications();
+      default: return null;
+    }
   };
 
   return (
     <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
       <BreadcrumbBar items={['Dashboard', 'Settings']} />
-      <div className="max-w-[600px] mx-auto p-8">
+      <div className="max-w-[960px] mx-auto p-8">
         <h1 className="text-2xl font-semibold text-foreground mb-8">Settings</h1>
-        <div className="bg-card rounded-lg shadow-widget p-8 space-y-6">
-          {[
-            { label: 'Name', value: name, onChange: setName },
-            { label: 'Email', value: email, onChange: setEmail },
-            { label: 'Company Name', value: company, onChange: setCompany },
-          ].map(f => (
-            <div key={f.label} className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{f.label}</label>
-              <input
-                value={f.value}
-                onChange={e => f.onChange(e.target.value)}
-                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          ))}
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Company Logo</label>
-            <div className="w-full h-24 rounded-md border-2 border-dashed border-input bg-background flex items-center justify-center gap-2 text-sm text-muted-foreground cursor-pointer hover:border-primary transition-colors">
-              <Upload size={16} />
-              <span>Upload logo (coming soon)</span>
-            </div>
-          </div>
+        <div className="grid grid-cols-[220px_1fr] gap-8">
+          {/* Left nav */}
+          <nav className="space-y-1">
+            {NAV_ITEMS.map(item => {
+              const isActive = activeSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => !item.disabled && setActiveSection(item.id)}
+                  disabled={item.disabled}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors text-left ${
+                    item.disabled
+                      ? 'text-muted-foreground/40 cursor-not-allowed'
+                      : isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground hover:bg-muted/50'
+                  }`}
+                >
+                  <item.icon size={16} />
+                  <span>{item.label}</span>
+                  {item.disabled && (
+                    <span className="ml-auto text-[9px] uppercase tracking-wider text-muted-foreground/40">Soon</span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
 
-          {/* Default Template */}
-          <div className="space-y-3 pt-4 border-t border-border">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Default Template</label>
-            <p className="text-xs text-muted-foreground">New proposals will use this template by default.</p>
-            <div className="grid grid-cols-3 gap-3">
-              {templates.map(t => {
-                const style = thumbnailStyles[t.id];
-                const isSelected = defaultTpl === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => setDefaultTpl(t.id)}
-                    className={`rounded-lg border-2 p-1 transition-all text-left ${
-                      isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <div className={`${style.bg} rounded-md h-20 p-2 flex flex-col gap-1.5 relative`}>
-                      <div className={`${style.accent} h-1.5 w-10 rounded-full`} />
-                      <div className={`${style.accent} h-1 w-14 rounded-full opacity-40`} />
-                      <div className={`${style.accent} h-1 w-12 rounded-full opacity-40`} />
-                      {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                          <Check size={10} className="text-primary-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs font-medium text-foreground mt-1 px-1">{t.name}</p>
-                  </button>
-                );
-              })}
-            </div>
+          {/* Content */}
+          <div className="bg-card rounded-lg shadow-widget p-8">
+            {renderContent()}
           </div>
-
-          {/* Default Sections */}
-          <div className="space-y-3 pt-4 border-t border-border">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Default Sections</label>
-            <p className="text-xs text-muted-foreground">Choose which sections are included by default in new proposals.</p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/50">
-                <span className="text-sm text-foreground font-medium">Cover</span>
-                <Switch checked disabled className="opacity-50" />
-              </div>
-              {TOGGLEABLE_SECTIONS.map(s => (
-                <div key={s.type} className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted/30 transition-colors">
-                  <span className="text-sm text-foreground">{s.label}</span>
-                  <Switch
-                    checked={enabledSections.includes(s.type)}
-                    onCheckedChange={() => toggleSection(s.type)}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Save size={16} /> Save Settings
-          </button>
         </div>
       </div>
     </motion.div>

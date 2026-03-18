@@ -25,11 +25,12 @@ export const ALL_SECTION_TYPES: { type: SectionType; title: string }[] = [
 ];
 
 export const BOILERPLATE_CONTENT: Record<string, string> = {
-  'executive-summary': 'We are pleased to present this proposal for [Project Name]. Our goal is to [briefly describe the outcome]. We believe this project represents a significant opportunity to [benefit for client].',
+  'executive-summary': 'We are pleased to present this proposal for [Project Title]. Our goal is to [briefly describe the outcome]. We believe this project represents a significant opportunity to [benefit for client].',
   'scope': 'The following work is included in this proposal:\n\n• [List your deliverables here]\n\nThe following is explicitly out of scope:\n\n• [List exclusions]',
   'deliverables': 'Upon completion, you will receive:\n\n• [List what the client gets]',
   'timeline': 'We estimate this project will take [X weeks] to complete.\n\n• Phase 1: [dates]\n• Phase 2: [dates]',
-  'terms': 'Payment is due [net 30/on receipt]. A deposit of [50%] is required before work begins. Revisions are limited to [2 rounds].',
+  'investment': 'Please see the investment breakdown below. Payment terms and conditions are outlined in the Terms section.',
+  'terms': 'Payment is due [net 30/on receipt]. A deposit of [50%] is required before work begins. Revisions are limited to [2 rounds]. Additional revisions will be billed at [hourly rate].',
 };
 
 export interface ProposalSection {
