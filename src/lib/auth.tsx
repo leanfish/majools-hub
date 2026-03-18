@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { getCurrentUser, type User } from './api';
-import type { User as UserType } from './mock-data';
+import { getCurrentUser } from './api';
+import type { User } from './mock-data';
 
 interface AuthContextType {
   user: UserType | null;
