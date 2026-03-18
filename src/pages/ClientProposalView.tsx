@@ -7,6 +7,8 @@ import type { Proposal } from '@/lib/mock-data';
 import { getSettings } from '@/lib/settings-store';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import ProposalPreview from '@/components/ProposalPreview';
+import type { TemplateId } from '@/lib/templates';
 
 export default function ClientProposalView() {
   const { token } = useParams<{ token: string }>();
@@ -68,14 +70,12 @@ export default function ClientProposalView() {
 
   if (!proposal) return null;
 
-  // ─── Access Code Gate — white-labeled, no Majools branding ───
   if (!unlocked) {
     const cover = proposal.sections.find(s => s.type === 'cover')?.coverData;
     const projectTitle = cover?.projectTitle || proposal.title || 'Proposal';
     return (
       <div className="min-h-screen bg-surface-dark flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
-          {/* Freelancer branding — logo or company name */}
           <div className="flex items-center justify-center mb-10">
             {companyLogo ? (
               <img src={companyLogo} alt={companyName || 'Company'} className="h-10 w-auto" />
@@ -83,7 +83,6 @@ export default function ClientProposalView() {
               <span className="text-[28px] font-bold tracking-[0.08em] uppercase text-surface-dark-foreground">{companyName}</span>
             ) : null}
           </div>
-
           <div className="bg-card rounded-lg p-8 shadow-widget space-y-5">
             <h1 className="text-xl font-semibold text-foreground text-center">{projectTitle}</h1>
             <p className="text-sm text-muted-foreground text-center">Enter your access code to view this proposal</p>
@@ -102,7 +101,6 @@ export default function ClientProposalView() {
     );
   }
 
-  // ─── Response confirmation ───
   if (responded) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -121,12 +119,9 @@ export default function ClientProposalView() {
     );
   }
 
-  // ─── Main proposal view ───
   const cover = proposal.sections.find(s => s.type === 'cover')?.coverData;
   const displayCompany = companyName || cover?.companyName || 'Your Company';
-  const totalPages = proposal.sections.length;
   const version = proposal.version || 1;
-  const sentDate = proposal.sentAt ? format(new Date(proposal.sentAt), 'MMM d, yyyy') : '';
 
   const handlePdfExport = async () => {
     setPdfExporting(true);
@@ -159,78 +154,27 @@ export default function ClientProposalView() {
     }
   };
 
+  const templateId = ((proposal as any).template || 'classic') as TemplateId;
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* ── Sticky top bar ── */}
       <header className="sticky top-0 z-30 bg-card border-b border-border px-6 py-3 flex items-center justify-between">
         <BrandMark imgClass="h-7" textClass="text-base font-bold tracking-[0.06em] uppercase text-foreground" />
         <span className="text-xs font-medium text-muted-foreground">v{version}</span>
       </header>
 
-      {/* ── Scrollable content ── */}
-      <motion.main ref={mainRef} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1 max-w-3xl mx-auto w-full p-8 pb-28 space-y-10">
-        {proposal.sections.map((s, pageIdx) => {
-          if (s.type === 'cover' && cover) {
-            return (
-              <div key={s.id} data-pdf-page className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
-                <div className="flex-1 p-8 flex flex-col justify-center space-y-2">
-                  <h1 className="text-2xl font-semibold text-foreground">{cover.projectTitle || proposal.title}</h1>
-                  <p className="text-muted-foreground">Prepared for <span className="text-foreground font-medium">{cover.clientName || proposal.client}</span></p>
-                  <p className="text-sm text-muted-foreground">By {displayCompany} · {cover.date}</p>
-                </div>
-              </div>
-            );
-          }
-
-          if (s.type === 'investment') {
-            const items = s.lineItems || [];
-            const total = items.reduce((sum, li) => sum + li.total, 0);
-            if (items.length === 0) return null;
-            return (
-              <div key={s.id} data-pdf-page className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
-                <div className="flex-1 p-8">
-                  <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
-                  <div className="space-y-2">
-                    {items.map(li => (
-                      <div key={li.id} className="flex justify-between py-2 border-b border-border last:border-0">
-                        <div>
-                          <span className="text-sm text-foreground">{li.description || 'Line item'}</span>
-                          <span className="text-xs text-muted-foreground ml-2">× {li.quantity}</span>
-                        </div>
-                        <span className="text-sm font-medium text-foreground">${li.total.toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="pt-4 mt-4 border-t border-border flex justify-between">
-                    <span className="font-semibold text-foreground">Total</span>
-                    <span className="text-xl font-semibold text-foreground">${total.toFixed(2)}</span>
-                  </div>
-                </div>
-                <div className="border-t border-border px-8 py-2 flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>{proposal.title} · v{version}{sentDate ? ` · ${sentDate}` : ''}</span>
-                  <span>Page {pageIdx + 1} of {totalPages}</span>
-                </div>
-              </div>
-            );
-          }
-
-          if (!s.content) return null;
-          return (
-            <div key={s.id} data-pdf-page className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
-              <div className="flex-1 p-8">
-                <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
-                <div className="text-sm text-foreground whitespace-pre-wrap">{s.content}</div>
-              </div>
-              <div className="border-t border-border px-8 py-2 flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>{proposal.title} · v{version}{sentDate ? ` · ${sentDate}` : ''}</span>
-                <span>Page {pageIdx + 1} of {totalPages}</span>
-              </div>
-            </div>
-          );
-        })}
+      <motion.main ref={mainRef} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1 max-w-3xl mx-auto w-full p-8 pb-28">
+        <ProposalPreview
+          sections={proposal.sections}
+          template={templateId}
+          companyName={displayCompany}
+          version={version}
+          sentAt={proposal.sentAt}
+          proposalTitle={proposal.title}
+          clientName={cover?.clientName || proposal.client}
+        />
       </motion.main>
 
-      {/* ── Fixed bottom bar ── */}
       <footer className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border px-6 py-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button
