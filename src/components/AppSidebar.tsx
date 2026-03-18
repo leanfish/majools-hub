@@ -63,7 +63,7 @@ const AppSidebar = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-[220px] bg-surface-dark shadow-sidebar z-40 flex flex-col">
+    <aside className="fixed left-0 top-16 bottom-0 w-[240px] bg-surface-dark shadow-sidebar z-40 flex flex-col">
       <nav className="flex-1 py-4 flex flex-col gap-0.5">
         {mainNav.map(renderItem)}
       </nav>
