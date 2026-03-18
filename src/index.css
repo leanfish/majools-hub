@@ -70,3 +70,27 @@
     font-weight: 600;
   }
 }
+
+/* Rich text content spacing — editor & preview */
+.proposal-prose p {
+  margin-bottom: 0.75em;
+}
+.proposal-prose h2 {
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+}
+.proposal-prose h3 {
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+}
+.proposal-prose ul,
+.proposal-prose ol {
+  margin-top: 0.5em;
+  margin-bottom: 0.75em;
+}
+.proposal-prose li {
+  margin-bottom: 0.25em;
+}
+.proposal-prose li:last-child {
+  margin-bottom: 0;
+}
