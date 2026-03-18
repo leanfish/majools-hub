@@ -194,25 +194,14 @@ export default function ProposalBuilder() {
         </div>
 
         <div className="grid grid-cols-[280px_1fr] gap-6">
-          <div className="bg-card rounded-lg shadow-widget p-4 space-y-1 h-fit">
-            <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Sections</h3>
-            {sections.map((s, i) => (
-              <div
-                key={s.id}
-                draggable
-                onDragStart={() => handleDragStart(i)}
-                onDragOver={e => handleDragOver(e, i)}
-                onDragEnd={handleDragEnd}
-                onClick={() => setActiveSection(i)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm cursor-pointer transition-colors ${
-                  i === activeSection ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-secondary'
-                }`}
-              >
-                <GripVertical size={14} className="text-muted-foreground flex-shrink-0 cursor-grab" />
-                <span className="min-w-0 flex-1 whitespace-normal break-words leading-snug">{getSectionNavLabel(s)}</span>
-              </div>
-            ))}
-          </div>
+          <SectionsPanel
+            sections={sections}
+            activeSection={activeSection}
+            onSetActive={setActiveSection}
+            onReorder={handleReorder}
+            onDelete={handleDeleteSection}
+            onAdd={handleAddSection}
+          />
 
           <div className="bg-card rounded-lg shadow-widget p-8">
             <h2 className="text-lg font-semibold text-foreground mb-6">{current?.title}</h2>
