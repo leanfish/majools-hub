@@ -7,26 +7,26 @@ const tips: Record<string, { description: string; bullets: string[] }> = {
     description: 'The first thing your client sees. Set the tone for the entire proposal.',
     bullets: [
       'Make the project title clear and specific.',
-      "Use your client's company name exactly as they use it.",
+      'Use your client\'s company name exactly as they use it.',
       'Include a date so the proposal feels current.',
-      'Your company name builds trust — make sure it's prominent.',
+      'Your company name builds trust - make sure it\'s prominent.',
     ],
   },
   'executive-summary': {
     description: 'A concise overview of the entire proposal. Clients often decide here.',
     bullets: [
-      'Keep to 2–3 paragraphs.',
-      'State the problem, your solution, and why you're the right person.',
+      'Keep to 2-3 paragraphs.',
+      'State the problem, your solution, and why you\'re the right person.',
       'Write it last even though it appears first.',
-      'Avoid jargon — write for a decision-maker, not a technician.',
+      'Avoid jargon - write for a decision-maker, not a technician.',
     ],
   },
   scope: {
-    description: 'Defines exactly what is and isn't included in your work.',
+    description: 'Defines exactly what is and is not included in your work.',
     bullets: [
       'Be specific about what is and is not included.',
       'Vague scope leads to scope creep.',
-      'If it's not written here, it's not included.',
+      'If it\'s not written here, it\'s not included.',
       'Use bullet points for clarity.',
     ],
   },
@@ -98,7 +98,7 @@ export default function SectionHelpTips({ sectionType, onClose }: Props) {
           <ul className="space-y-2.5">
             {tip.bullets.map((b, i) => (
               <li key={i} className="flex gap-2 text-sm text-foreground">
-                <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                <span className="text-primary mt-0.5 flex-shrink-0">&#8226;</span>
                 <span>{b}</span>
               </li>
             ))}
