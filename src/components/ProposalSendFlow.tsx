@@ -66,6 +66,15 @@ export default function ProposalSendFlow({ proposalId, sections, template, compa
             <span className="text-sm font-medium text-foreground">
               {step === 'preview' ? 'Preview' : step === 'settings' ? 'Send Settings' : 'Sent!'}
             </span>
+            {step === 'preview' && onTemplateChange && (
+              <button
+                onClick={() => setShowTemplateModal(true)}
+                className="flex items-center gap-1.5 ml-3 px-3 py-1.5 rounded-md border border-border text-xs font-medium text-foreground hover:bg-secondary transition-colors"
+              >
+                <Palette size={14} />
+                Change Template
+              </button>
+            )}
           </div>
           {!previewOnly && (
             <div className="flex items-center gap-1 ml-4">
