@@ -12,16 +12,8 @@ import { getSettings, saveSettings, TOGGLEABLE_SECTIONS, DEFAULT_BOILERPLATE, DE
 import type { SectionType } from '@/lib/mock-data';
 import { Switch } from '@/components/ui/switch';
 import { MiniCoverPreview } from '@/components/TemplateSelectorModal';
-  User, Building2, FileText, CreditCard, Bell,
-  Receipt, Users, Save, Upload, Check, ChevronDown, ChevronRight, Lock, X,
-} from 'lucide-react';
-import BreadcrumbBar from '@/components/BreadcrumbBar';
-import { useAuth } from '@/lib/auth';
-import { toast } from 'sonner';
-import { templates, getDefaultTemplate, setDefaultTemplate, type TemplateId } from '@/lib/templates';
-import { getSettings, saveSettings, TOGGLEABLE_SECTIONS, DEFAULT_BOILERPLATE, DEFAULT_BRAND_COLORS, type Settings, type BrandColors, type LogoDisplayMode } from '@/lib/settings-store';
-import type { SectionType } from '@/lib/mock-data';
-import { Switch } from '@/components/ui/switch';
+
+
 
 type SettingsSection = 'profile' | 'company' | 'proposals' | 'billing' | 'notifications' | 'invoicing' | 'crm';
 
