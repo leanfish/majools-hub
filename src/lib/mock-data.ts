@@ -57,11 +57,15 @@ export interface Proposal {
   updatedAt: string;
   value: number;
   sections: ProposalSection[];
-  accessType?: 'link' | 'password';
-  password?: string;
+  accessType?: 'link' | 'access-code';
+  accessCode?: string;
   publicToken?: string;
   isDeleted?: boolean;
   deletedAt?: string;
+  version?: number;
+  sentAt?: string;
+  parentId?: string;
+  template?: string;
 }
 
 export interface ActivityItem {
@@ -98,6 +102,10 @@ export const mockProposals: Proposal[] = [
     value: 4500,
     sections: defaultSections,
     publicToken: 'tk-acme-001',
+    version: 1,
+    sentAt: '2026-03-12T14:30:00Z',
+    accessType: 'access-code',
+    accessCode: 'acme2026',
   },
   {
     id: 'prop-2',
@@ -109,6 +117,7 @@ export const mockProposals: Proposal[] = [
     updatedAt: '2026-03-11T16:00:00Z',
     value: 2800,
     sections: defaultSections,
+    version: 1,
   },
   {
     id: 'prop-3',
@@ -121,6 +130,8 @@ export const mockProposals: Proposal[] = [
     value: 1200,
     sections: defaultSections,
     publicToken: 'tk-pinnacle-003',
+    version: 1,
+    sentAt: '2026-03-09T10:00:00Z',
   },
   {
     id: 'prop-4',
@@ -133,6 +144,8 @@ export const mockProposals: Proposal[] = [
     value: 6500,
     sections: defaultSections,
     publicToken: 'tk-zenith-004',
+    version: 1,
+    sentAt: '2026-03-06T12:00:00Z',
   },
   {
     id: 'prop-5',
@@ -144,6 +157,7 @@ export const mockProposals: Proposal[] = [
     updatedAt: '2026-03-04T09:00:00Z',
     value: 3200,
     sections: defaultSections,
+    version: 1,
   },
 ];
 

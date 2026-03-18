@@ -4,13 +4,14 @@ import { motion } from 'framer-motion';
 import { getPublicProposal, respondToProposal } from '@/lib/api';
 import type { Proposal } from '@/lib/mock-data';
 import logoIcon from '@/assets/logo-icon.png';
+import { format } from 'date-fns';
 
 export default function ClientProposalView() {
   const { token } = useParams<{ token: string }>();
   const [proposal, setProposal] = useState<(Proposal & { requiresPassword: boolean }) | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [passwordInput, setPasswordInput] = useState('');
+  const [codeInput, setCodeInput] = useState('');
   const [unlocked, setUnlocked] = useState(false);
   const [responded, setResponded] = useState<'accepted' | 'declined' | null>(null);
   const [declineMessage, setDeclineMessage] = useState('');
@@ -25,10 +26,10 @@ export default function ClientProposalView() {
   }, [token]);
 
   const handleUnlock = () => {
-    if (proposal && passwordInput === proposal.password) {
+    if (proposal && codeInput === proposal.accessCode) {
       setUnlocked(true);
     } else {
-      setError('Incorrect password');
+      setError('Incorrect access code');
     }
   };
 
@@ -62,14 +63,14 @@ export default function ClientProposalView() {
             <img src={logoIcon} alt="Majools" className="h-8" />
             <span className="text-xl font-bold tracking-[0.08em] uppercase text-foreground">MAJOOLS</span>
           </div>
-          <h2 className="text-lg font-semibold text-foreground text-center">This proposal is password protected</h2>
+          <h2 className="text-lg font-semibold text-foreground text-center">This proposal requires an access code</h2>
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
           <input
-            type="password"
-            value={passwordInput}
-            onChange={e => { setPasswordInput(e.target.value); setError(''); }}
-            placeholder="Enter password"
-            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            type="text"
+            value={codeInput}
+            onChange={e => { setCodeInput(e.target.value); setError(''); }}
+            placeholder="Enter access code"
+            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <button onClick={handleUnlock} className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">Unlock</button>
         </motion.div>
@@ -99,6 +100,9 @@ export default function ClientProposalView() {
 
   const cover = proposal.sections.find(s => s.type === 'cover')?.coverData;
   const displayCompany = cover?.companyName || 'Your Company';
+  const totalPages = proposal.sections.length;
+  const version = proposal.version || 1;
+  const sentDate = proposal.sentAt ? format(new Date(proposal.sentAt), 'MMM d, yyyy') : '';
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,13 +115,19 @@ export default function ClientProposalView() {
 
       <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto p-8 space-y-10">
         {/* Each section as a distinct page card */}
-        {proposal.sections.map(s => {
+        {proposal.sections.map((s, pageIdx) => {
           if (s.type === 'cover' && cover) {
             return (
-              <div key={s.id} className="bg-card rounded-lg shadow-widget p-8 min-h-[500px] flex flex-col justify-center space-y-2">
-                <h1 className="text-2xl font-semibold text-foreground">{cover.projectTitle || proposal.title}</h1>
-                <p className="text-muted-foreground">Prepared for <span className="text-foreground font-medium">{cover.clientName || proposal.client}</span></p>
-                <p className="text-sm text-muted-foreground">By {displayCompany} · {cover.date}</p>
+              <div key={s.id} className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
+                <div className="flex-1 p-8 flex flex-col justify-center space-y-2">
+                  <h1 className="text-2xl font-semibold text-foreground">{cover.projectTitle || proposal.title}</h1>
+                  <p className="text-muted-foreground">Prepared for <span className="text-foreground font-medium">{cover.clientName || proposal.client}</span></p>
+                  <p className="text-sm text-muted-foreground">By {displayCompany} · {cover.date}</p>
+                </div>
+                <div className="border-t border-border px-8 py-2 flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>{proposal.title} · v{version}{sentDate ? ` · ${sentDate}` : ''}</span>
+                  <span>Page {pageIdx + 1} of {totalPages}</span>
+                </div>
               </div>
             );
           }
@@ -127,22 +137,28 @@ export default function ClientProposalView() {
             const total = items.reduce((sum, li) => sum + li.total, 0);
             if (items.length === 0) return null;
             return (
-              <div key={s.id} className="bg-card rounded-lg shadow-widget p-8 min-h-[500px]">
-                <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
-                <div className="space-y-2">
-                  {items.map(li => (
-                    <div key={li.id} className="flex justify-between py-2 border-b border-border last:border-0">
-                      <div>
-                        <span className="text-sm text-foreground">{li.description || 'Line item'}</span>
-                        <span className="text-xs text-muted-foreground ml-2">× {li.quantity}</span>
+              <div key={s.id} className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
+                <div className="flex-1 p-8">
+                  <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
+                  <div className="space-y-2">
+                    {items.map(li => (
+                      <div key={li.id} className="flex justify-between py-2 border-b border-border last:border-0">
+                        <div>
+                          <span className="text-sm text-foreground">{li.description || 'Line item'}</span>
+                          <span className="text-xs text-muted-foreground ml-2">× {li.quantity}</span>
+                        </div>
+                        <span className="text-sm font-medium text-foreground">${li.total.toFixed(2)}</span>
                       </div>
-                      <span className="text-sm font-medium text-foreground">${li.total.toFixed(2)}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  <div className="pt-4 mt-4 border-t border-border flex justify-between">
+                    <span className="font-semibold text-foreground">Total</span>
+                    <span className="text-xl font-semibold text-foreground">${total.toFixed(2)}</span>
+                  </div>
                 </div>
-                <div className="pt-4 mt-4 border-t border-border flex justify-between">
-                  <span className="font-semibold text-foreground">Total</span>
-                  <span className="text-xl font-semibold text-foreground">${total.toFixed(2)}</span>
+                <div className="border-t border-border px-8 py-2 flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>{proposal.title} · v{version}{sentDate ? ` · ${sentDate}` : ''}</span>
+                  <span>Page {pageIdx + 1} of {totalPages}</span>
                 </div>
               </div>
             );
@@ -150,9 +166,15 @@ export default function ClientProposalView() {
 
           if (!s.content) return null;
           return (
-            <div key={s.id} className="bg-card rounded-lg shadow-widget p-8 min-h-[500px]">
-              <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
-              <div className="text-sm text-foreground whitespace-pre-wrap">{s.content}</div>
+            <div key={s.id} className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
+              <div className="flex-1 p-8">
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
+                <div className="text-sm text-foreground whitespace-pre-wrap">{s.content}</div>
+              </div>
+              <div className="border-t border-border px-8 py-2 flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>{proposal.title} · v{version}{sentDate ? ` · ${sentDate}` : ''}</span>
+                <span>Page {pageIdx + 1} of {totalPages}</span>
+              </div>
             </div>
           );
         })}

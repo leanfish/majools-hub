@@ -1,4 +1,4 @@
-import { mockUser, mockProposals, mockActivity, createDefaultSections, type Proposal, type User } from './mock-data';
+import { mockUser, mockProposals, createDefaultSections, type Proposal, type User } from './mock-data';
 
 // In-memory store (resets on refresh)
 let proposals = [...mockProposals];
@@ -77,6 +77,9 @@ export async function createProposal(data: Partial<Proposal>): Promise<Proposal>
     updatedAt: now,
     value: data.value || 0,
     sections: data.sections || createDefaultSections(),
+    version: data.version || 1,
+    parentId: data.parentId,
+    template: data.template,
   };
   proposals.unshift(proposal);
   return proposal;
@@ -105,21 +108,50 @@ export async function deleteProposal(id: string): Promise<void> {
   };
 }
 
-export async function sendProposal(id: string, accessType: 'link' | 'password', password?: string): Promise<{ link: string; token: string }> {
+export async function sendProposal(id: string, accessType: 'link' | 'access-code', accessCode?: string): Promise<{ link: string; token: string }> {
   requireAuth();
   await delay(500);
   const idx = proposals.findIndex(p => p.id === id);
   if (idx === -1) throw new Error('Proposal not found');
   const publicToken = `tk-${id}-${Date.now()}`;
+  const now = new Date().toISOString();
   proposals[idx] = {
     ...proposals[idx],
     status: 'sent',
     publicToken,
     accessType,
-    password: accessType === 'password' ? password : undefined,
-    updatedAt: new Date().toISOString(),
+    accessCode: accessType === 'access-code' ? accessCode : undefined,
+    sentAt: now,
+    updatedAt: now,
   };
   return { link: `${window.location.origin}/p/${publicToken}`, token: publicToken };
+}
+
+// Revise: creates a new v2 draft from a sent proposal
+export async function reviseProposal(id: string): Promise<Proposal> {
+  requireAuth();
+  await delay();
+  const original = proposals.find(p => p.id === id && !p.isDeleted);
+  if (!original) throw new Error('Proposal not found');
+  const newVersion = (original.version || 1) + 1;
+  const newId = `prop-${nextId++}`;
+  const now = new Date().toISOString();
+  const revised: Proposal = {
+    ...original,
+    id: newId,
+    status: 'draft',
+    createdAt: now,
+    updatedAt: now,
+    version: newVersion,
+    parentId: original.id,
+    publicToken: undefined,
+    accessType: undefined,
+    accessCode: undefined,
+    sentAt: undefined,
+    sections: original.sections.map(s => ({ ...s, id: `sec-${Date.now()}-${Math.random().toString(36).slice(2)}` })),
+  };
+  proposals.unshift(revised);
+  return revised;
 }
 
 // Public (no auth)
@@ -127,7 +159,7 @@ export async function getPublicProposal(token: string): Promise<Proposal & { req
   await delay();
   const p = proposals.find(p => p.publicToken === token);
   if (!p) throw new Error('Proposal not found');
-  return { ...p, requiresPassword: p.accessType === 'password' };
+  return { ...p, requiresPassword: p.accessType === 'access-code' };
 }
 
 export async function respondToProposal(token: string, action: 'accept' | 'decline', message?: string): Promise<void> {
