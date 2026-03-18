@@ -89,7 +89,7 @@ export default function ClientProposalView() {
           </h2>
           <p className="text-sm text-muted-foreground">
             {responded === 'accepted'
-              ? 'Thank you! We'll be in touch shortly to get started.'
+              ? "Thank you! We'll be in touch shortly to get started."
               : 'Your response has been recorded. Thank you for your time.'}
           </p>
         </motion.div>
