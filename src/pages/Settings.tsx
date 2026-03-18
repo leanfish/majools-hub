@@ -11,6 +11,9 @@ import { templates, getDefaultTemplate, setDefaultTemplate, type TemplateId } fr
 import { getSettings, saveSettings, TOGGLEABLE_SECTIONS, DEFAULT_BOILERPLATE, DEFAULT_BRAND_COLORS, type Settings, type BrandColors, type LogoDisplayMode } from '@/lib/settings-store';
 import type { SectionType } from '@/lib/mock-data';
 import { Switch } from '@/components/ui/switch';
+import { MiniCoverPreview } from '@/components/TemplateSelectorModal';
+
+
 
 type SettingsSection = 'profile' | 'company' | 'proposals' | 'billing' | 'notifications' | 'invoicing' | 'crm';
 
@@ -24,11 +27,8 @@ const NAV_ITEMS: { id: SettingsSection; label: string; icon: typeof User; disabl
   { id: 'crm', label: 'CRM', icon: Users, disabled: true },
 ];
 
-const thumbnailStyles: Record<TemplateId, { bg: string; accent: string }> = {
-  classic: { bg: 'bg-white', accent: 'bg-gray-200' },
-  modern: { bg: 'bg-white', accent: 'bg-[#3DCEE9]' },
-  branded: { bg: 'bg-gray-900', accent: 'bg-[#3DCEE9]' },
-};
+
+
 
 export default function Settings() {
   const { user } = useAuth();
@@ -358,7 +358,6 @@ export default function Settings() {
         <p className="text-xs text-muted-foreground">New proposals will use this template by default.</p>
         <div className="grid grid-cols-3 gap-3">
           {templates.map(t => {
-            const style = thumbnailStyles[t.id];
             const isSelected = defaultTpl === t.id;
             return (
               <button
@@ -368,10 +367,8 @@ export default function Settings() {
                   isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'
                 }`}
               >
-                <div className={`${style.bg} rounded-md h-20 p-2 flex flex-col gap-1.5 relative`}>
-                  <div className={`${style.accent} h-1.5 w-10 rounded-full`} />
-                  <div className={`${style.accent} h-1 w-14 rounded-full opacity-40`} />
-                  <div className={`${style.accent} h-1 w-12 rounded-full opacity-40`} />
+                <div className="relative h-20 rounded-md overflow-hidden">
+                  <MiniCoverPreview templateId={t.id} />
                   {isSelected && (
                     <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
                       <Check size={10} className="text-primary-foreground" />

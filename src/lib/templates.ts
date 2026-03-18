@@ -1,4 +1,4 @@
-export type TemplateId = 'classic' | 'modern' | 'branded';
+export type TemplateId = 'classic' | 'modern' | 'branded' | 'executive' | 'minimal' | 'bold';
 
 export interface TemplateInfo {
   id: TemplateId;
@@ -15,12 +15,27 @@ export const templates: TemplateInfo[] = [
   {
     id: 'modern',
     name: 'Modern',
-    description: 'Bold cyan headers, strong visual hierarchy, design-forward',
+    description: 'Bold headers, strong visual hierarchy, design-forward',
   },
   {
     id: 'branded',
     name: 'Branded',
-    description: 'Premium deliverable with company name and cyan accents throughout',
+    description: 'Full brand colors with logo and premium accents',
+  },
+  {
+    id: 'executive',
+    name: 'Executive',
+    description: 'Premium feel for high-value corporate proposals',
+  },
+  {
+    id: 'minimal',
+    name: 'Minimal',
+    description: 'Extreme restraint — content is the design',
+  },
+  {
+    id: 'bold',
+    name: 'Bold',
+    description: 'High energy, full color for creative studios',
   },
 ];
 
