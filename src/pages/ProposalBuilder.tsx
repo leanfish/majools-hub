@@ -182,7 +182,7 @@ export default function ProposalBuilder() {
   const companyName = sections.find(s => s.type === 'cover')?.coverData?.companyName || '';
 
   return (
-    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="flex flex-col h-[calc(100vh-48px)]">
+    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="relative min-h-[calc(100vh-48px)]">
       <BreadcrumbBar items={['Dashboard', 'Proposals', isEdit ? 'Edit Proposal' : 'New Proposal']} />
       <div className="flex-1 overflow-auto">
         <div className="max-w-[1400px] mx-auto p-8 pb-24">
