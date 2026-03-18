@@ -32,12 +32,12 @@ export default function ProposalPreview({ sections, template, companyName, versi
   );
 
   // Render each section as a distinct page card with footer
-  const renderSectionCard = (section: ProposalSection, content: React.ReactNode, pageIdx: number) => (
+  const renderSectionCard = (section: ProposalSection, content: React.ReactNode, pageIdx: number, hideFooter = false) => (
     <div key={section.id} className="bg-white rounded-lg shadow-md min-h-[500px] overflow-hidden flex flex-col">
       <div className="flex-1">
         {content}
       </div>
-      {renderFooter(pageIdx)}
+      {!hideFooter && renderFooter(pageIdx)}
     </div>
   );
 
