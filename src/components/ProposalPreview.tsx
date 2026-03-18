@@ -111,7 +111,7 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
   if (template === 'branded') {
     pageIndex = 0;
     return (
-      <div className="space-y-10 p-2">
+      <div ref={ref} className="space-y-10 p-2">
         {cover && renderSectionCard(sections.find(s => s.type === 'cover')!, (
           <div className="bg-gray-900 px-10 py-10 min-h-[500px] flex flex-col justify-center relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#3DCEE9]/20 rounded-full -translate-y-1/2 translate-x-1/3" />
