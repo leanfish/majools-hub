@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GripVertical, X, Plus } from 'lucide-react';
+import { GripVertical, X, Plus, Lock } from 'lucide-react';
 import type { ProposalSection, SectionType } from '@/lib/mock-data';
 import { ALL_SECTION_TYPES } from '@/lib/mock-data';
 import {
@@ -32,6 +32,7 @@ interface SectionsPanelProps {
   onReorder: (sections: ProposalSection[], newActiveIndex: number) => void;
   onDelete: (index: number) => void;
   onAdd: (type: SectionType, title: string) => void;
+  readOnly?: boolean;
 }
 
 export default function SectionsPanel({
@@ -41,6 +42,7 @@ export default function SectionsPanel({
   onReorder,
   onDelete,
   onAdd,
+  readOnly,
 }: SectionsPanelProps) {
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
@@ -48,6 +50,8 @@ export default function SectionsPanel({
   const [customName, setCustomName] = useState('');
 
   const moveSection = (from: number, to: number) => {
+    // Prevent moving anything to position 0 (cover is locked)
+    if (to === 0) return;
     const newSections = [...sections];
     const [moved] = newSections.splice(from, 1);
     newSections.splice(to, 0, moved);
@@ -59,6 +63,7 @@ export default function SectionsPanel({
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
     if (dragIdx === null || dragIdx === idx) return;
+    if (dragIdx === 0 || idx === 0) return; // Cover can't be dragged or displaced
     moveSection(dragIdx, idx);
     setDragIdx(idx);
   };
@@ -80,81 +85,90 @@ export default function SectionsPanel({
       <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
         Sections
       </h3>
-      {sections.map((s, i) => (
-        <div
-          key={s.id}
-          draggable
-          onDragStart={() => handleDragStart(i)}
-          onDragOver={e => handleDragOver(e, i)}
-          onDragEnd={handleDragEnd}
-          onClick={() => onSetActive(i)}
-          className={`group flex items-center gap-1 px-2 py-2 rounded-md text-sm cursor-pointer transition-colors ${
-            i === activeSection
-              ? 'bg-primary/10 text-primary font-medium'
-              : 'text-foreground hover:bg-secondary'
-          }`}
-        >
-          <GripVertical size={14} className="text-muted-foreground flex-shrink-0 cursor-grab" />
-          <span className="min-w-0 flex-1 whitespace-normal break-words leading-snug text-[13px]">
-            {getSectionNavLabel(s)}
-          </span>
-          {s.type !== 'cover' && (
-            <button
-              onClick={e => { e.stopPropagation(); setDeleteIdx(i); }}
-              className="p-0.5 rounded hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-              title="Remove section"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
-      ))}
+      {sections.map((s, i) => {
+        const isCover = s.type === 'cover';
+        return (
+          <div
+            key={s.id}
+            draggable={!isCover && !readOnly}
+            onDragStart={() => !isCover && handleDragStart(i)}
+            onDragOver={e => handleDragOver(e, i)}
+            onDragEnd={handleDragEnd}
+            onClick={() => onSetActive(i)}
+            className={`group flex items-center gap-1 px-2 py-2 rounded-md text-sm cursor-pointer transition-colors ${
+              i === activeSection
+                ? 'bg-primary/10 text-primary font-medium'
+                : 'text-foreground hover:bg-secondary'
+            } ${isCover ? 'border-b border-border mb-1' : ''}`}
+          >
+            {isCover ? (
+              <Lock size={12} className="text-muted-foreground flex-shrink-0" />
+            ) : (
+              <GripVertical size={14} className={`text-muted-foreground flex-shrink-0 ${readOnly ? '' : 'cursor-grab'}`} />
+            )}
+            <span className="min-w-0 flex-1 whitespace-normal break-words leading-snug text-[13px]">
+              {getSectionNavLabel(s)}
+            </span>
+            {!isCover && !readOnly && (
+              <button
+                onClick={e => { e.stopPropagation(); setDeleteIdx(i); }}
+                className="p-0.5 rounded hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                title="Remove section"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        );
+      })}
 
       {/* Add Section */}
-      <Popover open={showAddPicker} onOpenChange={setShowAddPicker}>
-        <PopoverTrigger asChild>
-          <button className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-3 w-full px-2 py-1.5">
-            <Plus size={14} /> Add Section
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-72 p-2" align="start">
-          <div className="space-y-1">
-            {availableSections.map(s => (
-              <button
-                key={s.type}
-                onClick={() => handleAddSection(s.type, s.title)}
-                className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-secondary transition-colors"
-              >
-                {s.title}
-              </button>
-            ))}
-            <div className="border-t border-border pt-2 mt-2">
-              <p className="text-xs text-muted-foreground px-3 mb-1">Custom Section</p>
-              <div className="flex gap-1 px-1">
-                <input
-                  value={customName}
-                  onChange={e => setCustomName(e.target.value)}
-                  placeholder="Section name"
-                  className="flex-1 h-8 px-2 rounded-md border border-input bg-background text-sm"
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && customName.trim()) {
-                      handleAddSection('custom', customName.trim());
-                    }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  className="h-8"
-                  disabled={!customName.trim()}
-                  onClick={() => handleAddSection('custom', customName.trim())}
+      {!readOnly && (
+        <Popover open={showAddPicker} onOpenChange={setShowAddPicker}>
+          <PopoverTrigger asChild>
+            <button className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-3 w-full px-2 py-1.5">
+              <Plus size={14} /> Add Section
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-2" align="start">
+            <div className="space-y-1">
+              {availableSections.map(s => (
+                <button
+                  key={s.type}
+                  onClick={() => handleAddSection(s.type, s.title)}
+                  className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-secondary transition-colors"
                 >
-                  Add
-                </Button>
+                  {s.title}
+                </button>
+              ))}
+              <div className="border-t border-border pt-2 mt-2">
+                <p className="text-xs text-muted-foreground px-3 mb-1">Custom Section</p>
+                <div className="flex gap-1 px-1">
+                  <input
+                    value={customName}
+                    onChange={e => setCustomName(e.target.value)}
+                    placeholder="Section name"
+                    className="flex-1 h-8 px-2 rounded-md border border-input bg-background text-sm"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && customName.trim()) {
+                        handleAddSection('custom', customName.trim());
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    className="h-8"
+                    disabled={!customName.trim()}
+                    onClick={() => handleAddSection('custom', customName.trim())}
+                  >
+                    Add
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+          </PopoverContent>
+        </Popover>
+      )}
 
       {/* Delete confirmation */}
       <AlertDialog open={deleteIdx !== null} onOpenChange={open => { if (!open) setDeleteIdx(null); }}>

@@ -23,8 +23,8 @@ type Step = 'preview' | 'settings' | 'confirmation';
 
 export default function ProposalSendFlow({ proposalId, sections, template, companyName, onClose, onSent, previewOnly, onTemplateChange }: Props) {
   const [step, setStep] = useState<Step>('preview');
-  const [accessType, setAccessType] = useState<'link' | 'password'>('link');
-  const [password, setPassword] = useState('');
+  const [accessType, setAccessType] = useState<'link' | 'access-code'>('link');
+  const [accessCode, setAccessCode] = useState('');
   const [sending, setSending] = useState(false);
   const [sentLink, setSentLink] = useState('');
   const [copied, setCopied] = useState(false);
@@ -33,7 +33,7 @@ export default function ProposalSendFlow({ proposalId, sections, template, compa
   const handleSend = async () => {
     setSending(true);
     try {
-      const result = await sendProposal(proposalId, accessType, accessType === 'password' ? password : undefined);
+      const result = await sendProposal(proposalId, accessType, accessType === 'access-code' ? accessCode : undefined);
       setSentLink(result.link);
       setStep('confirmation');
       toast.success('Proposal sent!');
@@ -125,29 +125,30 @@ export default function ProposalSendFlow({ proposalId, sections, template, compa
                 <div className="space-y-3">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Access Type</label>
                   <div className="flex gap-3">
-                    {(['link', 'password'] as const).map(type => (
+                    {([{ key: 'link' as const, label: 'Link Only' }, { key: 'access-code' as const, label: 'Access Code' }]).map(({ key, label }) => (
                       <button
-                        key={type}
-                        onClick={() => setAccessType(type)}
+                        key={key}
+                        onClick={() => setAccessType(key)}
                         className={`flex-1 h-10 rounded-md border text-sm font-medium transition-colors ${
-                          accessType === type ? 'border-primary bg-primary/10 text-primary' : 'border-border text-foreground hover:bg-secondary'
+                          accessType === key ? 'border-primary bg-primary/10 text-primary' : 'border-border text-foreground hover:bg-secondary'
                         }`}
                       >
-                        {type === 'link' ? 'Link Only' : 'Password Protected'}
+                        {label}
                       </button>
                     ))}
                   </div>
                 </div>
-                {accessType === 'password' && (
+                {accessType === 'access-code' && (
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</label>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Access Code</label>
                     <input
                       type="text"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="Set a password"
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={accessCode}
+                      onChange={e => setAccessCode(e.target.value)}
+                      placeholder="Set an access code"
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono"
                     />
+                    <p className="text-xs text-muted-foreground">Share this code with your client so they can view the proposal.</p>
                   </div>
                 )}
                 <div className="flex gap-2">
@@ -156,7 +157,7 @@ export default function ProposalSendFlow({ proposalId, sections, template, compa
                   </button>
                   <button
                     onClick={handleSend}
-                    disabled={sending || (accessType === 'password' && !password)}
+                    disabled={sending || (accessType === 'access-code' && !accessCode)}
                     className="flex-1 h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
                   >
                     {sending ? 'Sending...' : 'Send'}
@@ -189,6 +190,11 @@ export default function ProposalSendFlow({ proposalId, sections, template, compa
                     {copied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
+                {accessType === 'access-code' && accessCode && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Access code: <span className="font-mono font-medium text-foreground">{accessCode}</span>
+                  </p>
+                )}
                 <button
                   onClick={onSent}
                   className="w-full h-10 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors"
