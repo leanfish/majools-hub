@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, X, ArrowLeft, Eye } from 'lucide-react';
+import { Copy, Check, X, ArrowLeft, Eye, Palette } from 'lucide-react';
 import { sendProposal } from '@/lib/api';
 import { toast } from 'sonner';
 import ProposalPreview from './ProposalPreview';
+import TemplateSelectorModal from './TemplateSelectorModal';
 import type { ProposalSection } from '@/lib/mock-data';
 import type { TemplateId } from '@/lib/templates';
 
