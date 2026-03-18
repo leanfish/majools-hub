@@ -129,7 +129,7 @@ export default function SentProposalView() {
         </div>
       </div>
 
-      {/* Bottom action bar — no actions for accepted proposals */}
+      {/* Bottom action bar */}
       <div className="sticky bottom-0 z-10 border-t border-border bg-card px-8 py-3 flex items-center justify-between">
         <button
           onClick={() => navigate('/proposals')}
@@ -137,14 +137,23 @@ export default function SentProposalView() {
         >
           <ArrowLeft size={16} /> Back to Proposals
         </button>
-        {!isAccepted && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={handleCreateNewVersion}
-            className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            onClick={handleDownloadPdf}
+            disabled={pdfExporting}
+            className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
           >
-            <RefreshCw size={16} /> Create New Version
+            <Download size={16} /> {pdfExporting ? 'Exporting...' : 'Download PDF'}
           </button>
-        )}
+          {!isAccepted && (
+            <button
+              onClick={handleCreateNewVersion}
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <RefreshCw size={16} /> Create New Version
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );
