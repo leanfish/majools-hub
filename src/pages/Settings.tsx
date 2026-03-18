@@ -12,6 +12,7 @@ import { getSettings, saveSettings, TOGGLEABLE_SECTIONS, DEFAULT_BOILERPLATE, DE
 import type { SectionType } from '@/lib/mock-data';
 import { Switch } from '@/components/ui/switch';
 import { MiniCoverPreview } from '@/components/TemplateSelectorModal';
+import RichTextEditor from '@/components/RichTextEditor';
 
 
 
