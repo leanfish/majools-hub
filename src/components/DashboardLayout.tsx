@@ -7,7 +7,7 @@ const DashboardLayout = () => {
     <div className="min-h-screen bg-background">
       <TopBar />
       <AppSidebar />
-      <main className="ml-[220px] pt-16">
+      <main className="ml-[240px] pt-16">
         <Outlet />
       </main>
     </div>

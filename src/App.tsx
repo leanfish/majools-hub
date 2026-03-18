@@ -12,6 +12,8 @@ import ProposalBuilder from "./pages/ProposalBuilder";
 import ClientProposalView from "./pages/ClientProposalView";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
               <Route path="/proposals" element={<Proposals />} />
               <Route path="/proposals/new" element={<ProposalBuilder />} />
               <Route path="/proposals/:id/edit" element={<ProposalBuilder />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/help" element={<Help />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

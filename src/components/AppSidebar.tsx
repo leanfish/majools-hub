@@ -29,8 +29,8 @@ const mainNav: NavItem[] = [
 ];
 
 const bottomNav: NavItem[] = [
-  { title: "Settings", icon: Settings, path: "/settings", comingSoon: true },
-  { title: "Help", icon: HelpCircle, path: "/help", comingSoon: true },
+  { title: "Settings", icon: Settings, path: "/settings" },
+  { title: "Help", icon: HelpCircle, path: "/help" },
 ];
 
 const AppSidebar = () => {
@@ -38,7 +38,7 @@ const AppSidebar = () => {
   const navigate = useNavigate();
 
   const renderItem = (item: NavItem) => {
-    const isActive = location.pathname === item.path;
+    const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
 
     return (
       <button
@@ -63,7 +63,7 @@ const AppSidebar = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-[220px] bg-surface-dark shadow-sidebar z-40 flex flex-col">
+    <aside className="fixed left-0 top-16 bottom-0 w-[240px] bg-surface-dark shadow-sidebar z-40 flex flex-col">
       <nav className="flex-1 py-4 flex flex-col gap-0.5">
         {mainNav.map(renderItem)}
       </nav>
