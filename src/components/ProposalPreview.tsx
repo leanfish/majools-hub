@@ -76,7 +76,7 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
   if (template === 'modern') {
     pageIndex = 0;
     return (
-      <div className="space-y-10 p-2">
+      <div ref={ref} className="space-y-10 p-2">
         {cover && renderSectionCard(sections.find(s => s.type === 'cover')!, (
           <div className="bg-[#3DCEE9] px-10 py-12 min-h-[500px] flex flex-col justify-center">
             <h1 className="text-3xl font-bold text-white tracking-tight">{cover.projectTitle || 'Untitled Proposal'}</h1>
