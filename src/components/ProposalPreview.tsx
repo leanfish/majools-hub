@@ -68,11 +68,10 @@ export default function ProposalPreview({ sections, template, companyName }: Pro
               </div>
             ));
           }
-          if (!s.content) return null;
           return renderSectionCard(s, (
             <div className="px-10 py-8">
               <h2 className="text-lg font-bold text-[#3DCEE9] uppercase tracking-wider mb-4">{s.title}</h2>
-              <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{s.content}</div>
+              {s.content && <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{s.content}</div>}
             </div>
           ));
         })}
