@@ -24,6 +24,14 @@ export const ALL_SECTION_TYPES: { type: SectionType; title: string }[] = [
   { type: 'terms', title: 'Terms & Conditions' },
 ];
 
+export const BOILERPLATE_CONTENT: Record<string, string> = {
+  'executive-summary': 'We are pleased to present this proposal for [Project Name]. Our goal is to [briefly describe the outcome]. We believe this project represents a significant opportunity to [benefit for client].',
+  'scope': 'The following work is included in this proposal:\n\n• [List your deliverables here]\n\nThe following is explicitly out of scope:\n\n• [List exclusions]',
+  'deliverables': 'Upon completion, you will receive:\n\n• [List what the client gets]',
+  'timeline': 'We estimate this project will take [X weeks] to complete.\n\n• Phase 1: [dates]\n• Phase 2: [dates]',
+  'terms': 'Payment is due [net 30/on receipt]. A deposit of [50%] is required before work begins. Revisions are limited to [2 rounds].',
+};
+
 export interface ProposalSection {
   id: string;
   type: SectionType;
@@ -34,7 +42,7 @@ export interface ProposalSection {
     projectTitle: string;
     clientName: string;
     clientEmail: string;
-    yourName: string;
+    companyName: string;
     date: string;
   };
 }
@@ -52,6 +60,8 @@ export interface Proposal {
   accessType?: 'link' | 'password';
   password?: string;
   publicToken?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface ActivityItem {
@@ -61,13 +71,13 @@ export interface ActivityItem {
 }
 
 const defaultSections: ProposalSection[] = [
-  { id: '1', type: 'cover', title: 'Cover', content: '', coverData: { projectTitle: '', clientName: '', clientEmail: '', yourName: '', date: new Date().toISOString().split('T')[0] } },
-  { id: '2', type: 'executive-summary', title: 'Executive Summary', content: '' },
-  { id: '3', type: 'scope', title: 'Scope of Work', content: '' },
-  { id: '4', type: 'deliverables', title: 'Deliverables', content: '' },
-  { id: '5', type: 'timeline', title: 'Timeline', content: '' },
+  { id: '1', type: 'cover', title: 'Cover', content: '', coverData: { projectTitle: '', clientName: '', clientEmail: '', companyName: '', date: new Date().toISOString().split('T')[0] } },
+  { id: '2', type: 'executive-summary', title: 'Executive Summary', content: BOILERPLATE_CONTENT['executive-summary'] },
+  { id: '3', type: 'scope', title: 'Scope of Work', content: BOILERPLATE_CONTENT['scope'] },
+  { id: '4', type: 'deliverables', title: 'Deliverables', content: BOILERPLATE_CONTENT['deliverables'] },
+  { id: '5', type: 'timeline', title: 'Timeline', content: BOILERPLATE_CONTENT['timeline'] },
   { id: '6', type: 'investment', title: 'Investment', content: '', lineItems: [{ id: 'li-1', description: '', quantity: 1, unitPrice: 0, total: 0 }] },
-  { id: '7', type: 'terms', title: 'Terms & Conditions', content: '' },
+  { id: '7', type: 'terms', title: 'Terms & Conditions', content: BOILERPLATE_CONTENT['terms'] },
 ];
 
 export const mockUser: User = {

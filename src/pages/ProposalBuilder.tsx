@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Save, Send, CalendarIcon, Eye, Palette } from 'lucide-react';
+import { Plus, Trash2, Save, Send, CalendarIcon, Eye, Palette, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import ProposalSendFlow from '@/components/ProposalSendFlow';
 import TemplateSelectorModal from '@/components/TemplateSelectorModal';
 import SectionsPanel from '@/components/SectionsPanel';
+import SectionHelpTips from '@/components/SectionHelpTips';
 import { getProposal, createProposal, updateProposal } from '@/lib/api';
 import type { ProposalSection, ProposalLineItem, SectionType } from '@/lib/mock-data';
-import { createDefaultSections } from '@/lib/mock-data';
+import { createDefaultSections, BOILERPLATE_CONTENT } from '@/lib/mock-data';
 import { useAuth } from '@/lib/auth';
+import { getSettings } from '@/lib/settings-store';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -33,12 +35,16 @@ export default function ProposalBuilder() {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [proposalId, setProposalId] = useState(id || '');
   const [template, setTemplate] = useState<TemplateId>(getDefaultTemplate());
+  const [showHelp, setShowHelp] = useState(false);
 
+  // Auto-populate company name from Settings, fallback to user name
   useEffect(() => {
     if (!isEdit && user) {
+      const settings = getSettings();
+      const companyName = settings.companyName || user.name;
       setSections(prev => prev.map(s => {
-        if (s.type === 'cover' && s.coverData && !s.coverData.yourName) {
-          return { ...s, coverData: { ...s.coverData, yourName: user.name } };
+        if (s.type === 'cover' && s.coverData && !s.coverData.companyName) {
+          return { ...s, coverData: { ...s.coverData, companyName } };
         }
         return s;
       }));
@@ -132,14 +138,14 @@ export default function ProposalBuilder() {
     }
   };
 
-  const handleAddSection = (type: SectionType, title: string) => {
+  const handleAddSection = (type: SectionType, sectionTitle: string) => {
     const newSection: ProposalSection = {
       id: `sec-${Date.now()}`,
       type,
-      title,
-      content: '',
+      title: sectionTitle,
+      content: BOILERPLATE_CONTENT[type] || '',
       lineItems: type === 'investment' ? [{ id: `li-${Date.now()}`, description: '', quantity: 1, unitPrice: 0, total: 0 }] : undefined,
-      coverData: type === 'cover' ? { projectTitle: '', clientName: '', clientEmail: '', yourName: '', date: '' } : undefined,
+      coverData: type === 'cover' ? { projectTitle: '', clientName: '', clientEmail: '', companyName: '', date: '' } : undefined,
     };
     setSections(prev => [...prev, newSection]);
     setActiveSection(sections.length);
@@ -158,6 +164,7 @@ export default function ProposalBuilder() {
 
   const current = sections[activeSection];
   const currentTemplate = templates.find(t => t.id === template);
+  const companyName = sections.find(s => s.type === 'cover')?.coverData?.companyName || '';
 
   return (
     <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
@@ -204,7 +211,18 @@ export default function ProposalBuilder() {
           />
 
           <div className="bg-card rounded-lg shadow-widget p-8">
-            <h2 className="text-lg font-semibold text-foreground mb-6">{current?.title}</h2>
+            <div className="flex items-center gap-2 mb-6">
+              <h2 className="text-lg font-semibold text-foreground">{current?.title}</h2>
+              {current && current.type !== 'custom' && (
+                <button
+                  onClick={() => setShowHelp(!showHelp)}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  title="Writing tips"
+                >
+                  <HelpCircle size={16} />
+                </button>
+              )}
+            </div>
             <SectionEditor
               section={current}
               onUpdate={(updates) => updateSection(activeSection, updates)}
@@ -222,6 +240,7 @@ export default function ProposalBuilder() {
           proposalId={proposalId}
           sections={sections}
           template={template}
+          companyName={companyName}
           onClose={() => setShowSendFlow(false)}
           onSent={() => { setShowSendFlow(false); navigate('/proposals'); }}
           previewOnly={previewOnly}
@@ -234,6 +253,10 @@ export default function ProposalBuilder() {
           onSelect={setTemplate}
           onClose={() => setShowTemplateModal(false)}
         />
+      )}
+
+      {showHelp && current && current.type !== 'custom' && (
+        <SectionHelpTips sectionType={current.type} onClose={() => setShowHelp(false)} />
       )}
     </motion.div>
   );
@@ -257,7 +280,7 @@ function SectionEditor({
   if (!section) return null;
 
   if (section.type === 'cover') {
-    const cd = section.coverData || { projectTitle: '', clientName: '', clientEmail: '', yourName: '', date: '' };
+    const cd = section.coverData || { projectTitle: '', clientName: '', clientEmail: '', companyName: '', date: '' };
     const updateCover = (field: string, value: string) => {
       onUpdate({ coverData: { ...cd, [field]: value } });
       if (field === 'projectTitle') onTitleChange(value);
@@ -271,7 +294,7 @@ function SectionEditor({
           { label: 'Project Title', field: 'projectTitle', placeholder: 'e.g. Website Redesign' },
           { label: 'Client Name', field: 'clientName', placeholder: 'e.g. Acme Corp' },
           { label: 'Client Email', field: 'clientEmail', placeholder: 'client@example.com' },
-          { label: 'Your Name', field: 'yourName', placeholder: 'Your full name' },
+          { label: 'Company Name', field: 'companyName', placeholder: 'e.g. Acme Freelancing' },
         ].map(f => (
           <div key={f.field} className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{f.label}</label>

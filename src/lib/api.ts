@@ -47,17 +47,17 @@ export function logout(): void {
   window.location.href = '/login';
 }
 
-// Proposals
+// Proposals — filter out soft-deleted
 export async function getProposals(): Promise<Proposal[]> {
   requireAuth();
   await delay();
-  return [...proposals];
+  return proposals.filter(p => !p.isDeleted);
 }
 
 export async function getProposal(id: string): Promise<Proposal> {
   requireAuth();
   await delay();
-  const p = proposals.find(p => p.id === id);
+  const p = proposals.find(p => p.id === id && !p.isDeleted);
   if (!p) throw new Error('Proposal not found');
   return { ...p, sections: p.sections.map(s => ({ ...s })) };
 }
@@ -91,10 +91,18 @@ export async function updateProposal(id: string, data: Partial<Proposal>): Promi
   return proposals[idx];
 }
 
+// Soft delete
 export async function deleteProposal(id: string): Promise<void> {
   requireAuth();
   await delay();
-  proposals = proposals.filter(p => p.id !== id);
+  const idx = proposals.findIndex(p => p.id === id);
+  if (idx === -1) throw new Error('Proposal not found');
+  proposals[idx] = {
+    ...proposals[idx],
+    isDeleted: true,
+    deletedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 export async function sendProposal(id: string, accessType: 'link' | 'password', password?: string): Promise<{ link: string; token: string }> {

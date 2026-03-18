@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GripVertical, ChevronUp, ChevronDown, X, Plus } from 'lucide-react';
+import { GripVertical, X, Plus } from 'lucide-react';
 import type { ProposalSection, SectionType } from '@/lib/mock-data';
 import { ALL_SECTION_TYPES } from '@/lib/mock-data';
 import {
@@ -64,7 +64,6 @@ export default function SectionsPanel({
   };
   const handleDragEnd = () => setDragIdx(null);
 
-  // Sections not currently in the proposal
   const existingTypes = new Set(sections.map(s => s.type));
   const availableSections = ALL_SECTION_TYPES.filter(
     s => s.type !== 'cover' && !existingTypes.has(s.type)
@@ -99,33 +98,15 @@ export default function SectionsPanel({
           <span className="min-w-0 flex-1 whitespace-normal break-words leading-snug text-[13px]">
             {getSectionNavLabel(s)}
           </span>
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          {s.type !== 'cover' && (
             <button
-              onClick={e => { e.stopPropagation(); if (i > 0) moveSection(i, i - 1); }}
-              disabled={i === 0}
-              className="p-0.5 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Move up"
+              onClick={e => { e.stopPropagation(); setDeleteIdx(i); }}
+              className="p-0.5 rounded hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+              title="Remove section"
             >
-              <ChevronUp size={12} />
+              <X size={12} />
             </button>
-            <button
-              onClick={e => { e.stopPropagation(); if (i < sections.length - 1) moveSection(i, i + 1); }}
-              disabled={i === sections.length - 1}
-              className="p-0.5 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Move down"
-            >
-              <ChevronDown size={12} />
-            </button>
-            {s.type !== 'cover' && (
-              <button
-                onClick={e => { e.stopPropagation(); setDeleteIdx(i); }}
-                className="p-0.5 rounded hover:bg-destructive/10 hover:text-destructive"
-                title="Remove section"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
+          )}
         </div>
       ))}
 

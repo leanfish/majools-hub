@@ -81,7 +81,7 @@ export default function ClientProposalView() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card rounded-lg shadow-widget p-12 text-center max-w-md">
-          <div className={`text-5xl mb-4 ${responded === 'accepted' ? '' : ''}`}>
+          <div className="text-5xl mb-4">
             {responded === 'accepted' ? '✓' : '✗'}
           </div>
           <h2 className="text-xl font-semibold text-foreground mb-2">
@@ -98,8 +98,7 @@ export default function ClientProposalView() {
   }
 
   const cover = proposal.sections.find(s => s.type === 'cover')?.coverData;
-  const investment = proposal.sections.find(s => s.type === 'investment');
-  const total = investment?.lineItems?.reduce((sum, li) => sum + li.total, 0) || 0;
+  const displayCompany = cover?.companyName || 'Your Company';
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,47 +109,53 @@ export default function ClientProposalView() {
         </div>
       </header>
 
-      <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto p-8 space-y-8">
-        {/* Cover */}
-        {cover && (
-          <div className="bg-card rounded-lg shadow-widget p-8 space-y-2">
-            <h1 className="text-2xl font-semibold text-foreground">{cover.projectTitle || proposal.title}</h1>
-            <p className="text-muted-foreground">Prepared for <span className="text-foreground font-medium">{cover.clientName || proposal.client}</span></p>
-            <p className="text-sm text-muted-foreground">By {cover.yourName} · {cover.date}</p>
-          </div>
-        )}
+      <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto p-8 space-y-10">
+        {/* Each section as a distinct page card */}
+        {proposal.sections.map(s => {
+          if (s.type === 'cover' && cover) {
+            return (
+              <div key={s.id} className="bg-card rounded-lg shadow-widget p-8 min-h-[500px] flex flex-col justify-center space-y-2">
+                <h1 className="text-2xl font-semibold text-foreground">{cover.projectTitle || proposal.title}</h1>
+                <p className="text-muted-foreground">Prepared for <span className="text-foreground font-medium">{cover.clientName || proposal.client}</span></p>
+                <p className="text-sm text-muted-foreground">By {displayCompany} · {cover.date}</p>
+              </div>
+            );
+          }
 
-        {/* Content sections */}
-        {proposal.sections.filter(s => s.type !== 'cover' && s.type !== 'investment').map(s => (
-          s.content ? (
-            <div key={s.id} className="bg-card rounded-lg shadow-widget p-8">
+          if (s.type === 'investment') {
+            const items = s.lineItems || [];
+            const total = items.reduce((sum, li) => sum + li.total, 0);
+            if (items.length === 0) return null;
+            return (
+              <div key={s.id} className="bg-card rounded-lg shadow-widget p-8 min-h-[500px]">
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
+                <div className="space-y-2">
+                  {items.map(li => (
+                    <div key={li.id} className="flex justify-between py-2 border-b border-border last:border-0">
+                      <div>
+                        <span className="text-sm text-foreground">{li.description || 'Line item'}</span>
+                        <span className="text-xs text-muted-foreground ml-2">× {li.quantity}</span>
+                      </div>
+                      <span className="text-sm font-medium text-foreground">${li.total.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-4 mt-4 border-t border-border flex justify-between">
+                  <span className="font-semibold text-foreground">Total</span>
+                  <span className="text-xl font-semibold text-foreground">${total.toFixed(2)}</span>
+                </div>
+              </div>
+            );
+          }
+
+          if (!s.content) return null;
+          return (
+            <div key={s.id} className="bg-card rounded-lg shadow-widget p-8 min-h-[500px]">
               <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
               <div className="text-sm text-foreground whitespace-pre-wrap">{s.content}</div>
             </div>
-          ) : null
-        ))}
-
-        {/* Investment */}
-        {investment && investment.lineItems && investment.lineItems.length > 0 && (
-          <div className="bg-card rounded-lg shadow-widget p-8">
-            <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">Investment</h2>
-            <div className="space-y-2">
-              {investment.lineItems.map(li => (
-                <div key={li.id} className="flex justify-between py-2 border-b border-border last:border-0">
-                  <div>
-                    <span className="text-sm text-foreground">{li.description || 'Line item'}</span>
-                    <span className="text-xs text-muted-foreground ml-2">× {li.quantity}</span>
-                  </div>
-                  <span className="text-sm font-medium text-foreground">${li.total.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="pt-4 mt-4 border-t border-border flex justify-between">
-              <span className="font-semibold text-foreground">Total</span>
-              <span className="text-xl font-semibold text-foreground">${total.toFixed(2)}</span>
-            </div>
-          </div>
-        )}
+          );
+        })}
 
         {/* Actions */}
         <div className="bg-card rounded-lg shadow-widget p-8 space-y-4">
