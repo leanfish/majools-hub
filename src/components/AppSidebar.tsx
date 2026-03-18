@@ -29,8 +29,8 @@ const mainNav: NavItem[] = [
 ];
 
 const bottomNav: NavItem[] = [
-  { title: "Settings", icon: Settings, path: "/settings", comingSoon: true },
-  { title: "Help", icon: HelpCircle, path: "/help", comingSoon: true },
+  { title: "Settings", icon: Settings, path: "/settings" },
+  { title: "Help", icon: HelpCircle, path: "/help" },
 ];
 
 const AppSidebar = () => {
