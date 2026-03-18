@@ -9,9 +9,10 @@ import ProposalPreview from '@/components/ProposalPreview';
 import SectionsPanel from '@/components/SectionsPanel';
 import SectionHelpTips from '@/components/SectionHelpTips';
 import VersionHistoryDrawer from '@/components/VersionHistoryDrawer';
+import RichTextEditor from '@/components/RichTextEditor';
 import { getProposal, createProposal, updateProposal } from '@/lib/api';
-import type { ProposalSection, ProposalLineItem, SectionType } from '@/lib/mock-data';
-import { createDefaultSections, BOILERPLATE_CONTENT } from '@/lib/mock-data';
+import type { ProposalSection, ProposalLineItem, SectionType, TimelineRow, Testimonial } from '@/lib/mock-data';
+import { createDefaultSections, BOILERPLATE_CONTENT, DEFAULT_TIMELINE_ROWS } from '@/lib/mock-data';
 import { useAuth } from '@/lib/auth';
 import { getSettings } from '@/lib/settings-store';
 import { toast } from 'sonner';
@@ -44,7 +45,6 @@ export default function ProposalBuilder() {
   const [pdfExporting, setPdfExporting] = useState(false);
   const pdfRef = useRef<HTMLDivElement>(null);
 
-  // Auto-populate company name from Settings, fallback to user name
   useEffect(() => {
     if (!isEdit && user) {
       const settings = getSettings();
@@ -61,7 +61,6 @@ export default function ProposalBuilder() {
   useEffect(() => {
     if (isEdit && id) {
       getProposal(id).then(p => {
-        // If sent, redirect to read-only view
         if (p.status !== 'draft') {
           navigate(`/proposals/${p.id}/view`, { replace: true });
           return;
@@ -159,9 +158,41 @@ export default function ProposalBuilder() {
       content: BOILERPLATE_CONTENT[type] || '',
       lineItems: type === 'investment' ? [{ id: `li-${Date.now()}`, description: '', quantity: 1, unitPrice: 0, total: 0 }] : undefined,
       coverData: type === 'cover' ? { projectTitle: '', clientName: '', clientEmail: '', companyName: '', date: '' } : undefined,
+      coverLetterData: type === 'cover-letter' ? { toName: '', toTitle: '', fromCompany: '' } : undefined,
+      timelineRows: type === 'timeline' ? [...DEFAULT_TIMELINE_ROWS.map(r => ({ ...r, id: `tr-${Date.now()}-${r.id}` }))] : undefined,
+      testimonials: type === 'testimonials' ? [{ id: `test-${Date.now()}`, quote: '', clientName: '', clientCompany: '' }] : undefined,
     };
-    setSections(prev => [...prev, newSection]);
-    setActiveSection(sections.length);
+
+    // Fixed position sections
+    if (type === 'cover-letter') {
+      setSections(prev => [newSection, ...prev]);
+      setActiveSection(0);
+    } else if (type === 'table-of-contents') {
+      // After cover-letter if it exists, otherwise at start
+      setSections(prev => {
+        const clIdx = prev.findIndex(s => s.type === 'cover-letter');
+        const insertAt = clIdx >= 0 ? clIdx + 1 : 0;
+        const next = [...prev];
+        next.splice(insertAt, 0, newSection);
+        return next;
+      });
+      setActiveSection(0);
+    } else if (type === 'back-page') {
+      setSections(prev => [...prev, newSection]);
+      setActiveSection(sections.length);
+    } else {
+      // Insert before back-page if it exists, otherwise at end
+      setSections(prev => {
+        const bpIdx = prev.findIndex(s => s.type === 'back-page');
+        if (bpIdx >= 0) {
+          const next = [...prev];
+          next.splice(bpIdx, 0, newSection);
+          return next;
+        }
+        return [...prev, newSection];
+      });
+      setActiveSection(sections.length);
+    }
   };
 
   const handlePreview = () => {
@@ -179,7 +210,6 @@ export default function ProposalBuilder() {
     setPdfExporting(true);
     toast.info('Generating PDF...');
     try {
-      // Wait a tick for the hidden preview to render
       await new Promise(r => setTimeout(r, 100));
       const container = pdfRef.current;
       if (!container) throw new Error('No preview container');
@@ -252,7 +282,7 @@ export default function ProposalBuilder() {
             <div className="bg-card rounded-lg shadow-widget p-8">
               <div className="flex items-center gap-2 mb-6">
                 <h2 className="text-lg font-semibold text-foreground">{current?.title}</h2>
-                {current && current.type !== 'custom' && (
+                {current && current.type !== 'custom' && current.type !== 'table-of-contents' && (
                   <button
                     onClick={() => setShowHelp(!showHelp)}
                     className="text-muted-foreground hover:text-primary transition-colors"
@@ -269,6 +299,7 @@ export default function ProposalBuilder() {
                 onAddLineItem={addLineItem}
                 onUpdateLineItem={updateLineItem}
                 onRemoveLineItem={removeLineItem}
+                allSections={sections}
               />
             </div>
           </div>
@@ -331,7 +362,7 @@ export default function ProposalBuilder() {
         />
       )}
 
-      {showHelp && current && current.type !== 'custom' && (
+      {showHelp && current && current.type !== 'custom' && current.type !== 'table-of-contents' && (
         <SectionHelpTips sectionType={current.type} onClose={() => setShowHelp(false)} />
       )}
 
@@ -351,6 +382,7 @@ function SectionEditor({
   onAddLineItem,
   onUpdateLineItem,
   onRemoveLineItem,
+  allSections,
 }: {
   section: ProposalSection | undefined;
   onUpdate: (updates: Partial<ProposalSection>) => void;
@@ -358,16 +390,77 @@ function SectionEditor({
   onAddLineItem: () => void;
   onUpdateLineItem: (idx: number, updates: Partial<ProposalLineItem>) => void;
   onRemoveLineItem: (idx: number) => void;
+  allSections: ProposalSection[];
 }) {
   if (!section) return null;
 
+  // ── Table of Contents (auto-generated, read-only) ──
+  if (section.type === 'table-of-contents') {
+    const tocSections = allSections.filter(s => s.type !== 'cover-letter' && s.type !== 'table-of-contents');
+    return (
+      <div className="space-y-3">
+        <p className="text-xs text-muted-foreground">This section is auto-generated from your proposal sections. It cannot be manually edited.</p>
+        <div className="rounded-md border border-input bg-muted/30 p-4 space-y-2">
+          {tocSections.map((s, i) => (
+            <div key={s.id} className="flex items-center justify-between text-sm">
+              <span className="text-foreground">{s.title}</span>
+              <span className="text-muted-foreground text-xs">Page {i + 1}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Cover Letter ──
+  if (section.type === 'cover-letter') {
+    const cl = section.coverLetterData || { toName: '', toTitle: '', fromCompany: '' };
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">To (Client Name)</label>
+            <input
+              value={cl.toName}
+              onChange={e => onUpdate({ coverLetterData: { ...cl, toName: e.target.value } })}
+              placeholder="Client name"
+              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Title</label>
+            <input
+              value={cl.toTitle}
+              onChange={e => onUpdate({ coverLetterData: { ...cl, toTitle: e.target.value } })}
+              placeholder="e.g. CEO"
+              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">From (Company)</label>
+          <input
+            value={cl.fromCompany}
+            onChange={e => onUpdate({ coverLetterData: { ...cl, fromCompany: e.target.value } })}
+            placeholder="Your company name"
+            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Body</label>
+          <RichTextEditor content={section.content} onChange={html => onUpdate({ content: html })} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Cover ──
   if (section.type === 'cover') {
     const cd = section.coverData || { projectTitle: '', clientName: '', clientEmail: '', companyName: '', date: '' };
     const updateCover = (field: string, value: string) => {
       onUpdate({ coverData: { ...cd, [field]: value } });
       if (field === 'projectTitle') onTitleChange(value);
     };
-
     const dateValue = cd.date ? new Date(cd.date) : undefined;
 
     return (
@@ -392,25 +485,13 @@ function SectionEditor({
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</label>
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal h-10",
-                  !dateValue && "text-muted-foreground"
-                )}
-              >
+              <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !dateValue && "text-muted-foreground")}>
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {dateValue ? format(dateValue, "MMMM d, yyyy") : <span>Pick a date</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={dateValue}
-                onSelect={(d) => { if (d) updateCover('date', d.toISOString().split('T')[0]); }}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
+              <Calendar mode="single" selected={dateValue} onSelect={(d) => { if (d) updateCover('date', d.toISOString().split('T')[0]); }} initialFocus className={cn("p-3 pointer-events-auto")} />
             </PopoverContent>
           </Popover>
         </div>
@@ -418,6 +499,7 @@ function SectionEditor({
     );
   }
 
+  // ── Investment ──
   if (section.type === 'investment') {
     const items = section.lineItems || [];
     const total = items.reduce((sum, li) => sum + li.total, 0);
@@ -446,12 +528,128 @@ function SectionEditor({
     );
   }
 
+  // ── Timeline (table) ──
+  if (section.type === 'timeline') {
+    const rows = section.timelineRows || [];
+    const addRow = () => {
+      onUpdate({
+        timelineRows: [...rows, { id: `tr-${Date.now()}`, phase: '', activity: '', duration: '' }],
+      });
+    };
+    const updateRow = (idx: number, updates: Partial<TimelineRow>) => {
+      const newRows = [...rows];
+      newRows[idx] = { ...newRows[idx], ...updates };
+      onUpdate({ timelineRows: newRows });
+    };
+    const removeRow = (idx: number) => {
+      onUpdate({ timelineRows: rows.filter((_, i) => i !== idx) });
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-[120px_1fr_120px_40px] gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+          <span>Phase</span><span>Activity</span><span>Duration</span><span />
+        </div>
+        {rows.map((row, i) => (
+          <div key={row.id} className="grid grid-cols-[120px_1fr_120px_40px] gap-2 items-center">
+            <input value={row.phase} onChange={e => updateRow(i, { phase: e.target.value })} placeholder="Phase 1" className="h-9 px-2 rounded-md border border-input bg-background text-sm" />
+            <input value={row.activity} onChange={e => updateRow(i, { activity: e.target.value })} placeholder="Activity description" className="h-9 px-2 rounded-md border border-input bg-background text-sm" />
+            <input value={row.duration} onChange={e => updateRow(i, { duration: e.target.value })} placeholder="1 week" className="h-9 px-2 rounded-md border border-input bg-background text-sm" />
+            <button onClick={() => removeRow(i)} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+          </div>
+        ))}
+        <button onClick={addRow} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+          <Plus size={14} /> Add row
+        </button>
+      </div>
+    );
+  }
+
+  // ── Testimonials ──
+  if (section.type === 'testimonials') {
+    const items = section.testimonials || [];
+    const addTestimonial = () => {
+      if (items.length >= 5) { toast.error('Maximum 5 testimonials'); return; }
+      onUpdate({
+        testimonials: [...items, { id: `test-${Date.now()}`, quote: '', clientName: '', clientCompany: '' }],
+      });
+    };
+    const updateTestimonial = (idx: number, updates: Partial<Testimonial>) => {
+      const next = [...items];
+      next[idx] = { ...next[idx], ...updates };
+      onUpdate({ testimonials: next });
+    };
+    const removeTestimonial = (idx: number) => {
+      onUpdate({ testimonials: items.filter((_, i) => i !== idx) });
+    };
+
+    return (
+      <div className="space-y-4">
+        {items.map((t, i) => (
+          <div key={t.id} className="p-4 rounded-md border border-input bg-muted/20 space-y-3 relative">
+            <button onClick={() => removeTestimonial(i)} className="absolute top-2 right-2 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Quote</label>
+              <textarea
+                value={t.quote}
+                onChange={e => updateTestimonial(i, { quote: e.target.value })}
+                placeholder="What the client said..."
+                rows={3}
+                className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Client Name</label>
+                <input value={t.clientName} onChange={e => updateTestimonial(i, { clientName: e.target.value })} placeholder="Jane Smith" className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Client Company</label>
+                <input value={t.clientCompany} onChange={e => updateTestimonial(i, { clientCompany: e.target.value })} placeholder="Acme Corp" className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm" />
+              </div>
+            </div>
+          </div>
+        ))}
+        {items.length < 5 && (
+          <button onClick={addTestimonial} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+            <Plus size={14} /> Add Testimonial
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // ── Back Page ──
+  if (section.type === 'back-page') {
+    const settings = getSettings();
+    return (
+      <div className="space-y-4">
+        <div className="rounded-md border border-input bg-muted/30 p-4 space-y-2">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Contact details (from Settings)</p>
+          <div className="text-sm text-foreground space-y-1">
+            {settings.companyName && <p className="font-medium">{settings.companyName}</p>}
+            {settings.companyPhone && <p>{settings.companyPhone}</p>}
+            {settings.profileEmail && <p>{settings.profileEmail}</p>}
+            {settings.companyWebsite && <p>{settings.companyWebsite}</p>}
+          </div>
+          {!settings.companyName && !settings.companyPhone && (
+            <p className="text-xs text-muted-foreground">Add your contact details in Settings → Company</p>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Closing Statement</label>
+          <RichTextEditor content={section.content} onChange={html => onUpdate({ content: html })} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── All other rich text sections ──
   return (
-    <textarea
-      value={section.content}
-      onChange={e => onUpdate({ content: e.target.value })}
+    <RichTextEditor
+      content={section.content}
+      onChange={html => onUpdate({ content: html })}
       placeholder={`Write your ${section.title.toLowerCase()} here...`}
-      className="w-full h-64 px-3 py-2 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
     />
   );
 }

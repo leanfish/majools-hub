@@ -1,27 +1,23 @@
 import { useState } from 'react';
-import { GripVertical, X, Plus, Lock } from 'lucide-react';
+import { GripVertical, X, Plus, Lock, FileText, BookOpen } from 'lucide-react';
 import type { ProposalSection, SectionType } from '@/lib/mock-data';
 import { ALL_SECTION_TYPES } from '@/lib/mock-data';
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+
+const FIXED_TYPES = new Set<SectionType>(['cover', 'cover-letter', 'table-of-contents', 'back-page']);
 
 const getSectionNavLabel = (section: ProposalSection) => {
   if (section.type === 'executive-summary') return 'Summary';
   if (section.type === 'terms') return 'Terms';
+  if (section.type === 'table-of-contents') return 'TOC';
+  if (section.type === 'cover-letter') return 'Cover Letter';
+  if (section.type === 'back-page') return 'Back Page';
+  if (section.type === 'about-us') return 'About Us';
   return section.title;
 };
 
@@ -36,22 +32,28 @@ interface SectionsPanelProps {
 }
 
 export default function SectionsPanel({
-  sections,
-  activeSection,
-  onSetActive,
-  onReorder,
-  onDelete,
-  onAdd,
-  readOnly,
+  sections, activeSection, onSetActive, onReorder, onDelete, onAdd, readOnly,
 }: SectionsPanelProps) {
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
   const [showAddPicker, setShowAddPicker] = useState(false);
   const [customName, setCustomName] = useState('');
 
+  const isFixed = (s: ProposalSection) => FIXED_TYPES.has(s.type);
+
   const moveSection = (from: number, to: number) => {
-    // Prevent moving anything to position 0 (cover is locked)
-    if (to === 0) return;
+    const fromSection = sections[from];
+    const toSection = sections[to];
+    // Don't allow moving fixed sections or moving into fixed positions
+    if (isFixed(fromSection) || isFixed(toSection)) return;
+    // Don't allow moving before cover-letter/toc or after back-page
+    const coverLetterIdx = sections.findIndex(s => s.type === 'cover-letter');
+    const tocIdx = sections.findIndex(s => s.type === 'table-of-contents');
+    const backPageIdx = sections.findIndex(s => s.type === 'back-page');
+    const minMovable = Math.max(coverLetterIdx, tocIdx) + 1;
+    const maxMovable = backPageIdx >= 0 ? backPageIdx - 1 : sections.length - 1;
+    if (to < minMovable || to > maxMovable) return;
+
     const newSections = [...sections];
     const [moved] = newSections.splice(from, 1);
     newSections.splice(to, 0, moved);
@@ -63,7 +65,6 @@ export default function SectionsPanel({
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
     if (dragIdx === null || dragIdx === idx) return;
-    if (dragIdx === 0 || idx === 0) return; // Cover can't be dragged or displaced
     moveSection(dragIdx, idx);
     setDragIdx(idx);
   };
@@ -86,12 +87,12 @@ export default function SectionsPanel({
         Sections
       </h3>
       {sections.map((s, i) => {
-        const isCover = s.type === 'cover';
+        const fixed = isFixed(s);
         return (
           <div
             key={s.id}
-            draggable={!isCover && !readOnly}
-            onDragStart={() => !isCover && handleDragStart(i)}
+            draggable={!fixed && !readOnly}
+            onDragStart={() => !fixed && handleDragStart(i)}
             onDragOver={e => handleDragOver(e, i)}
             onDragEnd={handleDragEnd}
             onClick={() => onSetActive(i)}
@@ -99,9 +100,9 @@ export default function SectionsPanel({
               i === activeSection
                 ? 'bg-primary/10 text-primary font-medium'
                 : 'text-foreground hover:bg-secondary'
-            } ${isCover ? 'border-b border-border mb-1' : ''}`}
+            } ${s.type === 'cover' ? 'border-b border-border mb-1' : ''}`}
           >
-            {isCover ? (
+            {fixed ? (
               <Lock size={12} className="text-muted-foreground flex-shrink-0" />
             ) : (
               <GripVertical size={14} className={`text-muted-foreground flex-shrink-0 ${readOnly ? '' : 'cursor-grab'}`} />
@@ -109,7 +110,17 @@ export default function SectionsPanel({
             <span className="min-w-0 flex-1 whitespace-normal break-words leading-snug text-[13px]">
               {getSectionNavLabel(s)}
             </span>
-            {!isCover && !readOnly && (
+            {!fixed && !readOnly && s.type !== 'cover' && (
+              <button
+                onClick={e => { e.stopPropagation(); setDeleteIdx(i); }}
+                className="p-0.5 rounded hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                title="Remove section"
+              >
+                <X size={12} />
+              </button>
+            )}
+            {/* Allow removing fixed sections except cover */}
+            {fixed && s.type !== 'cover' && !readOnly && (
               <button
                 onClick={e => { e.stopPropagation(); setDeleteIdx(i); }}
                 className="p-0.5 rounded hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
@@ -155,12 +166,7 @@ export default function SectionsPanel({
                       }
                     }}
                   />
-                  <Button
-                    size="sm"
-                    className="h-8"
-                    disabled={!customName.trim()}
-                    onClick={() => handleAddSection('custom', customName.trim())}
-                  >
+                  <Button size="sm" className="h-8" disabled={!customName.trim()} onClick={() => handleAddSection('custom', customName.trim())}>
                     Add
                   </Button>
                 </div>
