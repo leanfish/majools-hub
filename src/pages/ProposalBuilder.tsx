@@ -236,10 +236,9 @@ export default function ProposalBuilder() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Fixed bottom action bar */}
-      <div className="border-t border-border bg-card px-8 py-3 flex items-center justify-between">
+      {/* Sticky bottom action bar */}
+      <div className="sticky bottom-0 z-10 border-t border-border bg-card px-8 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {readOnly ? (
             <button onClick={handleRevise} className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
