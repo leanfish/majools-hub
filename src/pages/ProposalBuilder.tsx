@@ -151,7 +151,7 @@ export default function ProposalBuilder() {
           </div>
         </div>
 
-        <div className="grid grid-cols-[260px_1fr] gap-6">
+        <div className="grid grid-cols-[280px_1fr] gap-6">
           <div className="bg-card rounded-lg shadow-widget p-4 space-y-1 h-fit">
             <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Sections</h3>
             {sections.map((s, i) => (
@@ -167,7 +167,7 @@ export default function ProposalBuilder() {
                 }`}
               >
                 <GripVertical size={14} className="text-muted-foreground flex-shrink-0 cursor-grab" />
-                <span className="truncate">{s.title}</span>
+                <span className="min-w-0 flex-1 whitespace-normal break-words leading-snug">{getSectionNavLabel(s)}</span>
               </div>
             ))}
           </div>
