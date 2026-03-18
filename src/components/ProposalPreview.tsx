@@ -109,14 +109,13 @@ export default function ProposalPreview({ sections, template, companyName }: Pro
               </div>
             ));
           }
-          if (!s.content) return null;
           return renderSectionCard(s, (
             <div className="bg-white px-10 py-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-1 h-6 bg-[#3DCEE9] rounded-full" />
                 <h2 className="text-sm font-bold uppercase tracking-wider text-gray-900">{s.title}</h2>
               </div>
-              <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{s.content}</div>
+              {s.content && <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{s.content}</div>}
             </div>
           ));
         })}
