@@ -185,19 +185,11 @@ export default function ProposalBuilder() {
           </div>
         </div>
 
-        {/* Template selector bar */}
-        <div className="bg-card rounded-lg shadow-widget px-4 py-3 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Palette size={16} className="text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Template:</span>
-            <span className="text-sm font-medium text-foreground">{currentTemplate?.name}</span>
-          </div>
-          <button
-            onClick={() => setShowTemplateModal(true)}
-            className="text-sm text-primary font-medium hover:underline"
-          >
-            Change Template
-          </button>
+        {/* Template indicator (read-only) */}
+        <div className="bg-card rounded-lg shadow-widget px-4 py-3 mb-6 flex items-center gap-3">
+          <Palette size={16} className="text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Template:</span>
+          <span className="text-sm font-medium text-foreground">{currentTemplate?.name}</span>
         </div>
 
         <div className="grid grid-cols-[280px_1fr] gap-6">
