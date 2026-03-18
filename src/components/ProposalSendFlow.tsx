@@ -16,6 +16,7 @@ interface Props {
   onClose: () => void;
   onSent: () => void;
   previewOnly?: boolean;
+  onTemplateChange?: (id: TemplateId) => void;
 }
 
 type Step = 'preview' | 'settings' | 'confirmation';
