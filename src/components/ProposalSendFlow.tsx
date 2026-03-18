@@ -14,7 +14,6 @@ interface Props {
   companyName?: string;
   onClose: () => void;
   onSent: () => void;
-  /** If true, start at preview-only mode (no send steps) */
   previewOnly?: boolean;
 }
 
@@ -87,7 +86,7 @@ export default function ProposalSendFlow({ proposalId, sections, template, compa
           {step === 'preview' && (
             <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full flex flex-col">
               <div className="flex-1 overflow-auto bg-gray-100">
-                <div className="max-w-3xl mx-auto my-8 bg-white rounded-lg shadow-lg overflow-hidden min-h-[600px]">
+                <div className="max-w-3xl mx-auto my-8">
                   <ProposalPreview sections={sections} template={template} companyName={companyName} />
                 </div>
               </div>

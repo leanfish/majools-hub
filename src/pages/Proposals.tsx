@@ -1,11 +1,21 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Plus, Search, Trash2, MoreHorizontal } from 'lucide-react';
+import { FileText, Plus, Search, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BreadcrumbBar from '../components/BreadcrumbBar';
 import { getProposals, deleteProposal } from '@/lib/api';
 import type { Proposal } from '@/lib/mock-data';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
 const statusColor: Record<string, string> = {
   sent: 'bg-primary/20 text-primary',
@@ -25,6 +35,7 @@ const Proposals = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<Proposal | null>(null);
 
   const loadProposals = () => {
     setLoading(true);
@@ -33,10 +44,11 @@ const Proposals = () => {
 
   useEffect(() => { loadProposals(); }, []);
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    await deleteProposal(id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteProposal(deleteTarget.id);
     toast.success('Proposal deleted');
+    setDeleteTarget(null);
     loadProposals();
   };
 
@@ -117,8 +129,11 @@ const Proposals = () => {
                     <td className="px-6 py-3.5 text-sm text-muted-foreground">{formatDate(p.createdAt)}</td>
                     <td className="px-6 py-3.5 text-sm text-muted-foreground">{formatDate(p.updatedAt)}</td>
                     <td className="px-6 py-3.5">
-                      <button onClick={(e) => handleDelete(p.id, e)} className="text-muted-foreground hover:text-destructive transition-colors">
-                        <Trash2 size={14} />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(p); }}
+                        className="p-1.5 rounded-md text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </td>
                   </tr>
@@ -128,6 +143,24 @@ const Proposals = () => {
           </table>
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{deleteTarget?.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This proposal will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 };

@@ -5,6 +5,7 @@ import BreadcrumbBar from '@/components/BreadcrumbBar';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import { templates, getDefaultTemplate, setDefaultTemplate, type TemplateId } from '@/lib/templates';
+import { getSettings, saveSettings } from '@/lib/settings-store';
 
 const thumbnailStyles: Record<TemplateId, { bg: string; accent: string }> = {
   classic: { bg: 'bg-white', accent: 'bg-gray-200' },
@@ -14,13 +15,15 @@ const thumbnailStyles: Record<TemplateId, { bg: string; accent: string }> = {
 
 export default function Settings() {
   const { user } = useAuth();
+  const settings = getSettings();
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [company, setCompany] = useState('');
+  const [company, setCompany] = useState(settings.companyName || '');
   const [defaultTpl, setDefaultTpl] = useState<TemplateId>(getDefaultTemplate());
 
   const handleSave = () => {
     setDefaultTemplate(defaultTpl);
+    saveSettings({ companyName: company });
     toast.success('Settings saved');
   };
 

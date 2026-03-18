@@ -10,6 +10,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [nameError, setNameError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setToken } = useAuth();
@@ -17,6 +18,13 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setNameError('');
+
+    if (!name.trim()) {
+      setNameError('Name is required');
+      return;
+    }
+
     setLoading(true);
     try {
       const { token } = await register(name, email, password);
@@ -55,11 +63,11 @@ export default function Register() {
             <input
               type="text"
               value={name}
-              onChange={e => setName(e.target.value)}
-              required
-              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              onChange={e => { setName(e.target.value); if (nameError) setNameError(''); }}
+              className={`w-full h-10 px-3 rounded-md border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${nameError ? 'border-destructive' : 'border-input'}`}
               placeholder="Your name"
             />
+            {nameError && <p className="text-xs text-destructive">{nameError}</p>}
           </div>
 
           <div className="space-y-1.5">
