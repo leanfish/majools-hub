@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Download } from 'lucide-react';
 import { getPublicProposal, respondToProposal } from '@/lib/api';
 import type { Proposal } from '@/lib/mock-data';
 import logoIcon from '@/assets/logo-icon.png';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function ClientProposalView() {
   const { token } = useParams<{ token: string }>();
