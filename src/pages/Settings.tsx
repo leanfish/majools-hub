@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   User, Building2, FileText, CreditCard, Bell,
@@ -12,6 +12,7 @@ import { getSettings, saveSettings, TOGGLEABLE_SECTIONS, DEFAULT_BOILERPLATE, DE
 import type { SectionType } from '@/lib/mock-data';
 import { Switch } from '@/components/ui/switch';
 import { MiniCoverPreview } from '@/components/TemplateSelectorModal';
+import RichTextEditor from '@/components/RichTextEditor';
 
 
 
@@ -419,11 +420,10 @@ export default function Settings() {
                     <p className="text-xs text-muted-foreground">
                       Edit the default boilerplate for this section. Use placeholders: <code className="bg-muted px-1 py-0.5 rounded text-[10px]">[Client Name]</code> <code className="bg-muted px-1 py-0.5 rounded text-[10px]">[Project Title]</code> <code className="bg-muted px-1 py-0.5 rounded text-[10px]">[Your Company]</code> <code className="bg-muted px-1 py-0.5 rounded text-[10px]">[Date]</code>
                     </p>
-                    <textarea
-                      value={editValue}
-                      onChange={e => setBoilerplateEdits(prev => ({ ...prev, [s.type]: e.target.value }))}
-                      rows={5}
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    <RichTextEditor
+                      content={editValue}
+                      onChange={val => setBoilerplateEdits(prev => ({ ...prev, [s.type]: val }))}
+                      className="min-h-[120px]"
                     />
                     <button
                       onClick={() => handleSaveBoilerplate(s.type)}
