@@ -200,6 +200,13 @@ export default function ProposalSendFlow({ proposalId, sections, template, compa
           )}
         </AnimatePresence>
       </div>
+      {showTemplateModal && onTemplateChange && (
+        <TemplateSelectorModal
+          current={template}
+          onSelect={onTemplateChange}
+          onClose={() => setShowTemplateModal(false)}
+        />
+      )}
     </div>
   );
 }
