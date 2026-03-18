@@ -184,8 +184,8 @@ export default function ProposalBuilder() {
   return (
     <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="relative min-h-[calc(100vh-48px)]">
       <BreadcrumbBar items={['Dashboard', 'Proposals', isEdit ? 'Edit Proposal' : 'New Proposal']} />
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-[1400px] mx-auto p-8 pb-24">
+      <div>
+        <div className="max-w-[1400px] mx-auto p-8 pb-20">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold text-foreground">{isEdit ? 'Edit Proposal' : 'New Proposal'}</h1>
