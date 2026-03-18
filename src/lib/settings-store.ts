@@ -26,6 +26,22 @@ export const DEFAULT_BOILERPLATE: Record<string, string> = {
   'terms': 'Payment is due [net 30/on receipt]. A deposit of [50%] is required before work begins. Revisions are limited to [2 rounds]. Additional revisions will be billed at [hourly rate].',
 };
 
+export type LogoDisplayMode = 'logo' | 'name';
+
+export interface BrandColors {
+  primary: string;    // buttons, active states, accents
+  background: string; // cover/header backgrounds (Branded template)
+  text: string;       // body text
+  accent: string;     // section headers, dividers, highlights
+}
+
+export const DEFAULT_BRAND_COLORS: BrandColors = {
+  primary: '#3DCEE9',
+  background: '#2B2B2B',
+  text: '#2B2B2B',
+  accent: '#3DCEE9',
+};
+
 export interface Settings {
   // Profile
   profileName: string;
@@ -33,6 +49,8 @@ export interface Settings {
   // Company
   companyName: string;
   companyLogo: string; // data URL or empty
+  logoDisplayMode: LogoDisplayMode;
+  brandColors: BrandColors;
   companyAddress: string;
   companyPhone: string;
   companyWebsite: string;
@@ -51,6 +69,8 @@ const DEFAULTS: Settings = {
   profileEmail: '',
   companyName: '',
   companyLogo: '',
+  logoDisplayMode: 'logo',
+  brandColors: { ...DEFAULT_BRAND_COLORS },
   companyAddress: '',
   companyPhone: '',
   companyWebsite: '',
@@ -70,6 +90,7 @@ export function getSettings(): Settings {
       return {
         ...DEFAULTS,
         ...parsed,
+        brandColors: { ...DEFAULT_BRAND_COLORS, ...(parsed.brandColors || {}) },
         boilerplate: { ...DEFAULT_BOILERPLATE, ...(parsed.boilerplate || {}) },
       };
     }

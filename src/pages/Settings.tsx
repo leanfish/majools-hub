@@ -8,7 +8,7 @@ import BreadcrumbBar from '@/components/BreadcrumbBar';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import { templates, getDefaultTemplate, setDefaultTemplate, type TemplateId } from '@/lib/templates';
-import { getSettings, saveSettings, TOGGLEABLE_SECTIONS, DEFAULT_BOILERPLATE, type Settings } from '@/lib/settings-store';
+import { getSettings, saveSettings, TOGGLEABLE_SECTIONS, DEFAULT_BOILERPLATE, DEFAULT_BRAND_COLORS, type Settings, type BrandColors, type LogoDisplayMode } from '@/lib/settings-store';
 import type { SectionType } from '@/lib/mock-data';
 import { Switch } from '@/components/ui/switch';
 
@@ -59,6 +59,8 @@ export default function Settings() {
     saveSettings({
       companyName: settings.companyName,
       companyLogo: settings.companyLogo,
+      logoDisplayMode: settings.logoDisplayMode,
+      brandColors: settings.brandColors,
       companyAddress: settings.companyAddress,
       companyPhone: settings.companyPhone,
       companyWebsite: settings.companyWebsite,
@@ -188,12 +190,72 @@ export default function Settings() {
     </div>
   );
 
+  const renderColorPicker = (label: string, desc: string, colorKey: keyof BrandColors) => {
+    const value = settings.brandColors[colorKey];
+    return (
+      <div className="flex items-center gap-3">
+        <label
+          className="relative w-9 h-9 rounded-md border border-border cursor-pointer overflow-hidden flex-shrink-0"
+          style={{ backgroundColor: value }}
+        >
+          <input
+            type="color"
+            value={value}
+            onChange={e => update({ brandColors: { ...settings.brandColors, [colorKey]: e.target.value } })}
+            className="absolute inset-0 opacity-0 cursor-pointer"
+          />
+        </label>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground leading-tight">{label}</p>
+          <p className="text-[11px] text-muted-foreground leading-tight">{desc}</p>
+        </div>
+        <input
+          type="text"
+          value={value}
+          onChange={e => {
+            const v = e.target.value;
+            if (/^#[0-9a-fA-F]{0,6}$/.test(v)) update({ brandColors: { ...settings.brandColors, [colorKey]: v } });
+          }}
+          className="w-[88px] h-8 px-2 rounded-md border border-input bg-background text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+    );
+  };
+
+  const renderBrandPreview = () => {
+    const { primary, background, text, accent } = settings.brandColors;
+    return (
+      <div className="rounded-lg border border-border overflow-hidden" style={{ maxWidth: 280 }}>
+        {/* Mini cover */}
+        <div className="px-5 py-6" style={{ backgroundColor: background }}>
+          <div className="h-1.5 w-16 rounded-full mb-2" style={{ backgroundColor: accent }} />
+          <div className="h-2 w-24 rounded-full mb-1" style={{ backgroundColor: '#ffffff', opacity: 0.9 }} />
+          <div className="h-1.5 w-20 rounded-full" style={{ backgroundColor: '#ffffff', opacity: 0.5 }} />
+        </div>
+        {/* Mini body */}
+        <div className="bg-white px-5 py-4 space-y-2">
+          <div className="h-1.5 w-14 rounded-full" style={{ backgroundColor: accent }} />
+          <div className="space-y-1">
+            <div className="h-1 w-full rounded-full" style={{ backgroundColor: text, opacity: 0.25 }} />
+            <div className="h-1 w-4/5 rounded-full" style={{ backgroundColor: text, opacity: 0.25 }} />
+            <div className="h-1 w-3/5 rounded-full" style={{ backgroundColor: text, opacity: 0.25 }} />
+          </div>
+          <div className="pt-2">
+            <div className="h-5 w-20 rounded-md" style={{ backgroundColor: primary }} />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderCompany = () => (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-foreground">Company</h2>
         <p className="text-sm text-muted-foreground mt-1">Your business information appears on proposals.</p>
       </div>
+
+      {/* Company Name */}
       {renderInput('Company Name', settings.companyName, v => update({ companyName: v }))}
 
       {/* Logo upload */}
@@ -212,18 +274,8 @@ export default function Settings() {
               <img src={settings.companyLogo} alt="Logo preview" className="h-full max-w-[200px] object-contain" />
             </div>
             <div className="flex gap-2">
-              <button
-                onClick={() => logoInputRef.current?.click()}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                Replace
-              </button>
-              <button
-                onClick={handleRemoveLogo}
-                className="text-xs font-medium text-destructive hover:underline flex items-center gap-1"
-              >
-                <X size={12} /> Remove
-              </button>
+              <button onClick={() => logoInputRef.current?.click()} className="text-xs font-medium text-primary hover:underline">Replace</button>
+              <button onClick={handleRemoveLogo} className="text-xs font-medium text-destructive hover:underline flex items-center gap-1"><X size={12} /> Remove</button>
             </div>
           </div>
         ) : (
@@ -235,9 +287,55 @@ export default function Settings() {
             <span>Upload logo (PNG, JPG, SVG)</span>
           </button>
         )}
-        <p className="text-[11px] text-muted-foreground">
-          When uploaded, your logo replaces the company name on all client-facing pages.
-        </p>
+      </div>
+
+      {/* Logo Display Rule */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Logo Display Rule</label>
+        <div className="space-y-1.5">
+          <label className={`flex items-center gap-2.5 px-3 py-2 rounded-md border cursor-pointer transition-colors ${
+            settings.logoDisplayMode === 'logo' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/30'
+          } ${!settings.companyLogo ? 'opacity-40 cursor-not-allowed' : ''}`}>
+            <input
+              type="radio"
+              name="logoDisplay"
+              checked={settings.logoDisplayMode === 'logo'}
+              onChange={() => update({ logoDisplayMode: 'logo' })}
+              disabled={!settings.companyLogo}
+              className="accent-[hsl(var(--primary))]"
+            />
+            <span className="text-sm text-foreground">Show logo only</span>
+          </label>
+          <label className={`flex items-center gap-2.5 px-3 py-2 rounded-md border cursor-pointer transition-colors ${
+            settings.logoDisplayMode === 'name' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/30'
+          }`}>
+            <input
+              type="radio"
+              name="logoDisplay"
+              checked={settings.logoDisplayMode === 'name'}
+              onChange={() => update({ logoDisplayMode: 'name' })}
+              className="accent-[hsl(var(--primary))]"
+            />
+            <span className="text-sm text-foreground">Show company name only</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Brand Colors */}
+      <div className="space-y-3">
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Brand Colors</label>
+        <div className="grid grid-cols-[1fr_auto] gap-6 items-start">
+          <div className="space-y-3">
+            {renderColorPicker('Primary Color', 'Buttons, active states, accents', 'primary')}
+            {renderColorPicker('Background Color', 'Cover/header backgrounds', 'background')}
+            {renderColorPicker('Text Color', 'Body text', 'text')}
+            {renderColorPicker('Accent Color', 'Section headers, dividers', 'accent')}
+          </div>
+          <div className="pt-1">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Preview</p>
+            {renderBrandPreview()}
+          </div>
+        </div>
       </div>
 
       {renderInput('Address', settings.companyAddress, v => update({ companyAddress: v }))}
