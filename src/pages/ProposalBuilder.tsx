@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GripVertical, Plus, Trash2, Save, Send, CalendarIcon, Eye, Palette } from 'lucide-react';
+import { Plus, Trash2, Save, Send, CalendarIcon, Eye, Palette } from 'lucide-react';
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import ProposalSendFlow from '@/components/ProposalSendFlow';
 import TemplateSelectorModal from '@/components/TemplateSelectorModal';
+import SectionsPanel from '@/components/SectionsPanel';
 import { getProposal, createProposal, updateProposal } from '@/lib/api';
-import type { ProposalSection, ProposalLineItem } from '@/lib/mock-data';
+import type { ProposalSection, ProposalLineItem, SectionType } from '@/lib/mock-data';
 import { createDefaultSections } from '@/lib/mock-data';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
@@ -16,12 +17,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getDefaultTemplate, templates, type TemplateId } from '@/lib/templates';
-
-const getSectionNavLabel = (section: ProposalSection) => {
-  if (section.type === 'executive-summary') return 'Summary';
-  if (section.type === 'terms') return 'Terms';
-  return section.title;
-};
 
 export default function ProposalBuilder() {
   const { id } = useParams();
@@ -37,7 +32,6 @@ export default function ProposalBuilder() {
   const [previewOnly, setPreviewOnly] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [proposalId, setProposalId] = useState(id || '');
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [template, setTemplate] = useState<TemplateId>(getDefaultTemplate());
 
   useEffect(() => {
@@ -126,18 +120,30 @@ export default function ProposalBuilder() {
     }
   };
 
-  const handleDragStart = (idx: number) => setDragIdx(idx);
-  const handleDragOver = (e: React.DragEvent, idx: number) => {
-    e.preventDefault();
-    if (dragIdx === null || dragIdx === idx) return;
-    const newSections = [...sections];
-    const [moved] = newSections.splice(dragIdx, 1);
-    newSections.splice(idx, 0, moved);
+  const handleReorder = (newSections: ProposalSection[], newActiveIndex: number) => {
     setSections(newSections);
-    setDragIdx(idx);
-    if (activeSection === dragIdx) setActiveSection(idx);
+    setActiveSection(newActiveIndex);
   };
-  const handleDragEnd = () => setDragIdx(null);
+
+  const handleDeleteSection = (index: number) => {
+    setSections(prev => prev.filter((_, i) => i !== index));
+    if (activeSection >= index && activeSection > 0) {
+      setActiveSection(activeSection - 1);
+    }
+  };
+
+  const handleAddSection = (type: SectionType, title: string) => {
+    const newSection: ProposalSection = {
+      id: `sec-${Date.now()}`,
+      type,
+      title,
+      content: '',
+      lineItems: type === 'investment' ? [{ id: `li-${Date.now()}`, description: '', quantity: 1, unitPrice: 0, total: 0 }] : undefined,
+      coverData: type === 'cover' ? { projectTitle: '', clientName: '', clientEmail: '', yourName: '', date: '' } : undefined,
+    };
+    setSections(prev => [...prev, newSection]);
+    setActiveSection(sections.length);
+  };
 
   const handlePreview = () => {
     setPreviewOnly(true);
@@ -188,25 +194,14 @@ export default function ProposalBuilder() {
         </div>
 
         <div className="grid grid-cols-[280px_1fr] gap-6">
-          <div className="bg-card rounded-lg shadow-widget p-4 space-y-1 h-fit">
-            <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Sections</h3>
-            {sections.map((s, i) => (
-              <div
-                key={s.id}
-                draggable
-                onDragStart={() => handleDragStart(i)}
-                onDragOver={e => handleDragOver(e, i)}
-                onDragEnd={handleDragEnd}
-                onClick={() => setActiveSection(i)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm cursor-pointer transition-colors ${
-                  i === activeSection ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-secondary'
-                }`}
-              >
-                <GripVertical size={14} className="text-muted-foreground flex-shrink-0 cursor-grab" />
-                <span className="min-w-0 flex-1 whitespace-normal break-words leading-snug">{getSectionNavLabel(s)}</span>
-              </div>
-            ))}
-          </div>
+          <SectionsPanel
+            sections={sections}
+            activeSection={activeSection}
+            onSetActive={setActiveSection}
+            onReorder={handleReorder}
+            onDelete={handleDeleteSection}
+            onAdd={handleAddSection}
+          />
 
           <div className="bg-card rounded-lg shadow-widget p-8">
             <h2 className="text-lg font-semibold text-foreground mb-6">{current?.title}</h2>
