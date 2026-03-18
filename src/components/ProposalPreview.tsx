@@ -68,7 +68,7 @@ export default function ProposalPreview({ sections, template, companyName }: Pro
               </div>
             ));
           }
-          if (!s.content && s.type !== 'investment') return null;
+          if (!s.content) return null;
           return renderSectionCard(s, (
             <div className="px-10 py-8">
               <h2 className="text-lg font-bold text-[#3DCEE9] uppercase tracking-wider mb-4">{s.title}</h2>
@@ -110,7 +110,7 @@ export default function ProposalPreview({ sections, template, companyName }: Pro
               </div>
             ));
           }
-          if (!s.content && s.type !== 'investment') return null;
+          if (!s.content) return null;
           return renderSectionCard(s, (
             <div className="bg-white px-10 py-8">
               <div className="flex items-center gap-3 mb-4">
@@ -147,7 +147,7 @@ export default function ProposalPreview({ sections, template, companyName }: Pro
             </div>
           ));
         }
-        if (!s.content && s.type !== 'investment') return null;
+        if (!s.content) return null;
         return renderSectionCard(s, (
           <div className="px-10 py-8">
             <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">{s.title}</h2>
