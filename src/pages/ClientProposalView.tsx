@@ -18,6 +18,8 @@ export default function ClientProposalView() {
   const [responded, setResponded] = useState<'accepted' | 'declined' | null>(null);
   const [declineMessage, setDeclineMessage] = useState('');
   const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!token) return;
