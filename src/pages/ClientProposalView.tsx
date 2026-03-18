@@ -137,7 +137,7 @@ export default function ClientProposalView() {
             const total = items.reduce((sum, li) => sum + li.total, 0);
             if (items.length === 0) return null;
             return (
-              <div key={s.id} className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
+              <div key={s.id} data-pdf-page className="bg-card rounded-lg shadow-widget min-h-[500px] flex flex-col relative">
                 <div className="flex-1 p-8">
                   <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">{s.title}</h2>
                   <div className="space-y-2">
