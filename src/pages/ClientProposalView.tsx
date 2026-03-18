@@ -117,7 +117,7 @@ export default function ClientProposalView() {
         </div>
       </header>
 
-      <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto p-8 space-y-10">
+      <motion.main ref={mainRef} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto p-8 space-y-10">
         {/* Each section as a distinct page card */}
         {proposal.sections.map((s, pageIdx) => {
           if (s.type === 'cover' && cover) {
