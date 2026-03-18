@@ -41,6 +41,8 @@ export default function ProposalBuilder() {
   const [showHelp, setShowHelp] = useState(false);
   const [proposalVersion, setProposalVersion] = useState(1);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   // Auto-populate company name from Settings, fallback to user name
   useEffect(() => {
