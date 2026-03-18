@@ -124,10 +124,6 @@ export default function ClientProposalView() {
                   <p className="text-muted-foreground">Prepared for <span className="text-foreground font-medium">{cover.clientName || proposal.client}</span></p>
                   <p className="text-sm text-muted-foreground">By {displayCompany} · {cover.date}</p>
                 </div>
-                <div className="border-t border-border px-8 py-2 flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>{proposal.title} · v{version}{sentDate ? ` · ${sentDate}` : ''}</span>
-                  <span>Page {pageIdx + 1} of {totalPages}</span>
-                </div>
               </div>
             );
           }

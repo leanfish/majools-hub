@@ -32,12 +32,12 @@ export default function ProposalPreview({ sections, template, companyName, versi
   );
 
   // Render each section as a distinct page card with footer
-  const renderSectionCard = (section: ProposalSection, content: React.ReactNode, pageIdx: number) => (
+  const renderSectionCard = (section: ProposalSection, content: React.ReactNode, pageIdx: number, hideFooter = false) => (
     <div key={section.id} className="bg-white rounded-lg shadow-md min-h-[500px] overflow-hidden flex flex-col">
       <div className="flex-1">
         {content}
       </div>
-      {renderFooter(pageIdx)}
+      {!hideFooter && renderFooter(pageIdx)}
     </div>
   );
 
@@ -76,7 +76,7 @@ export default function ProposalPreview({ sections, template, companyName, versi
             <p className="text-white/80 mt-2 text-base">Prepared for <span className="font-semibold text-white">{cover.clientName}</span></p>
             <p className="text-white/60 text-sm mt-1">By {displayCompany} · {dateDisplay}</p>
           </div>
-        ), pageIndex++)}
+        ), pageIndex++, true)}
 
         {sections.filter(s => s.type !== 'cover').map(s => {
           const idx = pageIndex++;
@@ -116,7 +116,7 @@ export default function ProposalPreview({ sections, template, companyName, versi
               <span>{dateDisplay}</span>
             </div>
           </div>
-        ), pageIndex++)}
+        ), pageIndex++, true)}
 
         {sections.filter(s => s.type !== 'cover').map(s => {
           const idx = pageIndex++;
@@ -155,7 +155,7 @@ export default function ProposalPreview({ sections, template, companyName, versi
           <p className="text-gray-500 mt-2">Prepared for <span className="text-gray-900 font-medium">{cover.clientName}</span></p>
           <p className="text-sm text-gray-400 mt-1">By {displayCompany} · {dateDisplay}</p>
         </div>
-      ), pageIndex++)}
+      ), pageIndex++, true)}
 
       {sections.filter(s => s.type !== 'cover').map(s => {
         const idx = pageIndex++;
