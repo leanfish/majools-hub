@@ -21,6 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getDefaultTemplate, templates, type TemplateId } from '@/lib/templates';
+import TemplateSelectorModal from '@/components/TemplateSelectorModal';
 
 export default function ProposalBuilder() {
   const { id } = useParams();
