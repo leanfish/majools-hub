@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Save, Send, CalendarIcon, Eye, HelpCircle, Clock, Download } from 'lucide-react';
+import { Plus, Trash2, Save, Send, CalendarIcon, Eye, HelpCircle, Clock, Download, Palette } from 'lucide-react';
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import ProposalSendFlow from '@/components/ProposalSendFlow';
@@ -21,6 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getDefaultTemplate, templates, type TemplateId } from '@/lib/templates';
+import TemplateSelectorModal from '@/components/TemplateSelectorModal';
 
 export default function ProposalBuilder() {
   const { id } = useParams();
@@ -43,6 +44,7 @@ export default function ProposalBuilder() {
   const [proposalVersion, setProposalVersion] = useState(1);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [pdfExporting, setPdfExporting] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -317,9 +319,13 @@ export default function ProposalBuilder() {
               <Clock size={16} /> Version History
             </button>
           )}
-          <span className="text-xs text-muted-foreground">
+          <button
+            onClick={() => setShowTemplateModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            <Palette size={14} />
             Template: {currentTemplate?.name}
-          </span>
+          </button>
         </div>
         <div className="flex gap-2">
           <button onClick={handleDownloadPdf} disabled={pdfExporting} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-50">
@@ -371,6 +377,14 @@ export default function ProposalBuilder() {
         open={showVersionHistory}
         onClose={() => setShowVersionHistory(false)}
       />
+
+      {showTemplateModal && (
+        <TemplateSelectorModal
+          current={template}
+          onSelect={setTemplate}
+          onClose={() => setShowTemplateModal(false)}
+        />
+      )}
     </motion.div>
   );
 }
