@@ -377,6 +377,14 @@ export default function ProposalBuilder() {
         open={showVersionHistory}
         onClose={() => setShowVersionHistory(false)}
       />
+
+      {showTemplateModal && (
+        <TemplateSelectorModal
+          current={template}
+          onSelect={setTemplate}
+          onClose={() => setShowTemplateModal(false)}
+        />
+      )}
     </motion.div>
   );
 }
