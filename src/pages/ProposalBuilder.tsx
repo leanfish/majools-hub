@@ -319,9 +319,13 @@ export default function ProposalBuilder() {
               <Clock size={16} /> Version History
             </button>
           )}
-          <span className="text-xs text-muted-foreground">
+          <button
+            onClick={() => setShowTemplateModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            <Palette size={14} />
             Template: {currentTemplate?.name}
-          </span>
+          </button>
         </div>
         <div className="flex gap-2">
           <button onClick={handleDownloadPdf} disabled={pdfExporting} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-50">
