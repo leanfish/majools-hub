@@ -44,6 +44,7 @@ export default function ProposalBuilder() {
   const [proposalVersion, setProposalVersion] = useState(1);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [pdfExporting, setPdfExporting] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
