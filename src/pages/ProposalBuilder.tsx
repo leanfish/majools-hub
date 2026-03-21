@@ -343,6 +343,13 @@ export default function ProposalBuilder() {
             <Palette size={14} />
             Template: {currentTemplate?.name}
           </button>
+          <button
+            onClick={() => setShowLivePreview(!showLivePreview)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            {showLivePreview ? <EyeOff size={14} /> : <Eye size={14} />}
+            {showLivePreview ? 'Hide Preview' : 'Live Preview'}
+          </button>
         </div>
         <div className="flex gap-2">
           <button onClick={handleDownloadPdf} disabled={pdfExporting} className="flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-50">
