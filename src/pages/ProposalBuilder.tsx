@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Save, Send, CalendarIcon, Eye, HelpCircle, Clock, Download, Palette } from 'lucide-react';
+import { Plus, Trash2, Save, Send, CalendarIcon, Eye, EyeOff, HelpCircle, Clock, Download, Palette } from 'lucide-react';
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import ProposalSendFlow from '@/components/ProposalSendFlow';
@@ -45,6 +45,7 @@ export default function ProposalBuilder() {
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [pdfExporting, setPdfExporting] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showLivePreview, setShowLivePreview] = useState(false);
   const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -271,7 +272,7 @@ export default function ProposalBuilder() {
             </div>
           </div>
 
-          <div className="grid grid-cols-[280px_1fr] gap-6">
+          <div className={`grid gap-6 ${showLivePreview ? 'grid-cols-[280px_1fr_1fr]' : 'grid-cols-[280px_1fr]'}`}>
             <SectionsPanel
               sections={sections}
               activeSection={activeSection}
@@ -304,6 +305,22 @@ export default function ProposalBuilder() {
                 allSections={sections}
               />
             </div>
+
+            {showLivePreview && (
+              <div className="bg-muted/30 rounded-lg shadow-widget p-4 overflow-auto max-h-[calc(100vh-200px)] sticky top-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Live Preview</p>
+                <div className="transform origin-top scale-[0.45] w-[222%]">
+                  <ProposalPreview
+                    sections={sections}
+                    template={template}
+                    companyName={companyName}
+                    version={proposalVersion}
+                    proposalTitle={title}
+                    clientName={sections.find(s => s.type === 'cover')?.coverData?.clientName}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -325,6 +342,13 @@ export default function ProposalBuilder() {
           >
             <Palette size={14} />
             Template: {currentTemplate?.name}
+          </button>
+          <button
+            onClick={() => setShowLivePreview(!showLivePreview)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            {showLivePreview ? <EyeOff size={14} /> : <Eye size={14} />}
+            {showLivePreview ? 'Hide Preview' : 'Live Preview'}
           </button>
         </div>
         <div className="flex gap-2">
