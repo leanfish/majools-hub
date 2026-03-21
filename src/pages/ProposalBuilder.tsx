@@ -202,6 +202,20 @@ export default function ProposalBuilder() {
     setShowSendFlow(true);
   };
 
+  const handleTemplateChange = async (nextTemplate: TemplateId) => {
+    const previousTemplate = template;
+    setTemplate(nextTemplate);
+
+    if (!proposalId) return;
+
+    try {
+      await updateProposal(proposalId, { template: nextTemplate } as any);
+    } catch {
+      setTemplate(previousTemplate);
+      toast.error('Failed to update template');
+    }
+  };
+
   const handleSendClick = async () => {
     await handleSave();
     setPreviewOnly(false);
