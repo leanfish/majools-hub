@@ -378,7 +378,7 @@ export default function ProposalBuilder() {
           onClose={() => setShowSendFlow(false)}
           onSent={() => { setShowSendFlow(false); navigate('/proposals'); }}
           previewOnly={previewOnly}
-          onTemplateChange={setTemplate}
+          onTemplateChange={handleTemplateChange}
         />
       )}
 
@@ -395,7 +395,7 @@ export default function ProposalBuilder() {
       {showTemplateModal && (
         <TemplateSelectorModal
           current={template}
-          onSelect={setTemplate}
+          onSelect={handleTemplateChange}
           onClose={() => setShowTemplateModal(false)}
         />
       )}
