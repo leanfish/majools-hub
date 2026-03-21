@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Save, Send, CalendarIcon, Eye, EyeOff, HelpCircle, Clock, Download, Palette } from 'lucide-react';
+import { Plus, Trash2, Save, Send, CalendarIcon, Eye, HelpCircle, Clock, Download, Palette } from 'lucide-react';
 import { format } from 'date-fns';
 import BreadcrumbBar from '@/components/BreadcrumbBar';
 import ProposalSendFlow from '@/components/ProposalSendFlow';
@@ -45,7 +45,6 @@ export default function ProposalBuilder() {
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [pdfExporting, setPdfExporting] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [showLivePreview, setShowLivePreview] = useState(false);
   const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
