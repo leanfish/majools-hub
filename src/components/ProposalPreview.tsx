@@ -196,12 +196,17 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
   const buildPages = (
     renderCover: (coverSection: ProposalSection) => React.ReactNode,
     renderContentSection: (s: ProposalSection, idx: number) => React.ReactNode,
+    renderCoverLetterPage?: (s: ProposalSection, idx: number) => React.ReactNode,
   ) => {
     sections.forEach(s => {
       if (s.type === 'cover-letter') {
-        pages.push(renderSectionCard(s, (
-          <div className="px-10 py-8">{renderCoverLetter(s)}</div>
-        ), pageIndex++));
+        if (renderCoverLetterPage) {
+          pages.push(renderCoverLetterPage(s, pageIndex++));
+        } else {
+          pages.push(renderSectionCard(s, (
+            <div className="px-10 py-8">{renderCoverLetterContent(s)}</div>
+          ), pageIndex++));
+        }
       } else if (s.type === 'table-of-contents') {
         pages.push(renderContentSection(s, pageIndex++));
       } else if (s.type === 'cover') {
@@ -209,7 +214,6 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
       } else if (s.type === 'back-page') {
         pages.push(renderSectionCard(s, renderBackPage(s), pageIndex++));
       } else {
-        // Skip empty content sections
         if (s.type === 'testimonials' && !(s.testimonials || []).some(t => t.quote)) return;
         if (s.type === 'timeline' && !(s.timelineRows || []).length) return;
         if (s.type === 'investment' && !(s.lineItems || []).length) return;
