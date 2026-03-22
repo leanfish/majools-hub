@@ -210,7 +210,7 @@ export default function ProposalSendFlow({ proposalId, sections, template: templ
       {showTemplateModal && onTemplateChange && (
         <TemplateSelectorModal
           current={template}
-          onSelect={onTemplateChange}
+          onSelect={(id) => { setTemplate(id); onTemplateChange?.(id); }}
           onClose={() => setShowTemplateModal(false)}
         />
       )}
