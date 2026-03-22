@@ -21,7 +21,8 @@ interface Props {
 
 type Step = 'preview' | 'settings' | 'confirmation';
 
-export default function ProposalSendFlow({ proposalId, sections, template, companyName, onClose, onSent, previewOnly, onTemplateChange }: Props) {
+export default function ProposalSendFlow({ proposalId, sections, template: templateProp, companyName, onClose, onSent, previewOnly, onTemplateChange }: Props) {
+  const [template, setTemplate] = useState<TemplateId>(templateProp);
   const [step, setStep] = useState<Step>('preview');
   const [accessType, setAccessType] = useState<'link' | 'access-code'>('link');
   const [accessCode, setAccessCode] = useState('');
