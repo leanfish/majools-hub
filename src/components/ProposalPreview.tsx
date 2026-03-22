@@ -150,10 +150,10 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
     );
   };
 
-  const renderCoverLetter = (section: ProposalSection) => {
+  const renderCoverLetterContent = (section: ProposalSection) => {
     const cl = section.coverLetterData;
     return (
-      <div>
+      <>
         {cl?.toName && (
           <div className="mb-4 text-sm" style={{ color: bc.text }}>
             <p className="font-medium">{cl.toName}</p>
@@ -161,7 +161,7 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
           </div>
         )}
         {section.content && renderHtml(section.content, { color: bc.text })}
-      </div>
+      </>
     );
   };
 
@@ -196,12 +196,17 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
   const buildPages = (
     renderCover: (coverSection: ProposalSection) => React.ReactNode,
     renderContentSection: (s: ProposalSection, idx: number) => React.ReactNode,
+    renderCoverLetterPage?: (s: ProposalSection, idx: number) => React.ReactNode,
   ) => {
     sections.forEach(s => {
       if (s.type === 'cover-letter') {
-        pages.push(renderSectionCard(s, (
-          <div className="px-10 py-8">{renderCoverLetter(s)}</div>
-        ), pageIndex++));
+        if (renderCoverLetterPage) {
+          pages.push(renderCoverLetterPage(s, pageIndex++));
+        } else {
+          pages.push(renderSectionCard(s, (
+            <div className="px-10 py-8">{renderCoverLetterContent(s)}</div>
+          ), pageIndex++));
+        }
       } else if (s.type === 'table-of-contents') {
         pages.push(renderContentSection(s, pageIndex++));
       } else if (s.type === 'cover') {
@@ -209,7 +214,6 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
       } else if (s.type === 'back-page') {
         pages.push(renderSectionCard(s, renderBackPage(s), pageIndex++));
       } else {
-        // Skip empty content sections
         if (s.type === 'testimonials' && !(s.testimonials || []).some(t => t.quote)) return;
         if (s.type === 'timeline' && !(s.timelineRows || []).length) return;
         if (s.type === 'investment' && !(s.lineItems || []).length) return;
@@ -236,6 +240,14 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
           {s.type === 'table-of-contents' ? renderToc(idx) : renderSectionContent(s)}
         </div>
       ), idx),
+      // Classic cover letter: clean white, subtle primary divider
+      (s, idx) => renderSectionCard(s, (
+        <div className="px-10 py-8">
+          <h2 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: bc.text, opacity: 0.4 }}>Cover Letter</h2>
+          <div className="h-px mb-6" style={{ backgroundColor: bc.primary, opacity: 0.2 }} />
+          {renderCoverLetterContent(s)}
+        </div>
+      ), idx),
     );
   }
 
@@ -254,6 +266,14 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
           <h2 className="text-lg font-bold uppercase tracking-wider mb-4" style={{ color: bc.primary }}>{s.title}</h2>
           <div className="border-t-2 mb-4" style={{ borderColor: bc.primary }} />
           {s.type === 'table-of-contents' ? renderToc(idx) : renderSectionContent(s)}
+        </div>
+      ), idx),
+      // Modern cover letter: bold primary left border
+      (s, idx) => renderSectionCard(s, (
+        <div className="px-10 py-8" style={{ borderLeft: `6px solid ${bc.primary}` }}>
+          <h2 className="text-lg font-bold uppercase tracking-wider mb-4" style={{ color: bc.primary }}>Cover Letter</h2>
+          <div className="border-t-2 mb-4" style={{ borderColor: bc.primary }} />
+          {renderCoverLetterContent(s)}
         </div>
       ), idx),
     );
@@ -283,6 +303,18 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
           {s.type === 'table-of-contents' ? renderToc(idx) : renderSectionContent(s)}
         </div>
       ), idx),
+      // Branded cover letter: accent header bar with from info
+      (s, idx) => renderSectionCard(s, (
+        <div className="flex flex-col h-full">
+          <div className="px-10 py-4" style={{ backgroundColor: bc.background }}>
+            <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: bc.accent }}>{displayCompany}</p>
+            <p className="text-white text-sm mt-1">Cover Letter</p>
+          </div>
+          <div className="px-10 py-6 bg-white flex-1">
+            {renderCoverLetterContent(s)}
+          </div>
+        </div>
+      ), idx),
     );
   }
 
@@ -309,6 +341,16 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
           </div>
         </div>
       ), idx),
+      // Executive cover letter: subtle left stripe
+      (s, idx) => renderSectionCard(s, (
+        <div className="flex h-full">
+          <div className="w-1 flex-shrink-0" style={{ backgroundColor: bc.background }} />
+          <div className="flex-1 px-10 py-8">
+            <h2 className="text-base font-semibold mb-4" style={{ color: bc.accent }}>Cover Letter</h2>
+            {renderCoverLetterContent(s)}
+          </div>
+        </div>
+      ), idx),
     );
   }
 
@@ -326,6 +368,12 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
         <div className="px-10 py-8 bg-white">
           <h2 className="text-sm font-bold tracking-[0.15em] uppercase mb-6" style={{ color: bc.text }}>{s.title}</h2>
           {s.type === 'table-of-contents' ? renderToc(idx) : renderSectionContent(s)}
+        </div>
+      ), idx),
+      // Minimal cover letter: ultra clean, no decoration
+      (s, idx) => renderSectionCard(s, (
+        <div className="px-10 py-8 bg-white">
+          {renderCoverLetterContent(s)}
         </div>
       ), idx),
     );
@@ -350,6 +398,17 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
             {s.type === 'table-of-contents' ? renderToc(idx) : (
               s.type === 'investment' ? renderInvestment(s, bc.accent) : renderSectionContent(s)
             )}
+          </div>
+        </div>
+      ), idx),
+      // Bold cover letter: background header bar
+      (s, idx) => renderSectionCard(s, (
+        <div className="flex flex-col h-full">
+          <div className="px-10 py-3" style={{ backgroundColor: bc.background }}>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-white">Cover Letter</h2>
+          </div>
+          <div className="px-10 py-6 bg-white flex-1">
+            {renderCoverLetterContent(s)}
           </div>
         </div>
       ), idx),
