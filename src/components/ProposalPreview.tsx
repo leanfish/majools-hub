@@ -150,10 +150,10 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
     );
   };
 
-  const renderCoverLetter = (section: ProposalSection) => {
+  const renderCoverLetterContent = (section: ProposalSection) => {
     const cl = section.coverLetterData;
     return (
-      <div>
+      <>
         {cl?.toName && (
           <div className="mb-4 text-sm" style={{ color: bc.text }}>
             <p className="font-medium">{cl.toName}</p>
@@ -161,7 +161,7 @@ const ProposalPreview = forwardRef<HTMLDivElement, Props>(function ProposalPrevi
           </div>
         )}
         {section.content && renderHtml(section.content, { color: bc.text })}
-      </div>
+      </>
     );
   };
 
